@@ -12,7 +12,7 @@ public class TestResultModel {
     public TestResultModel(int wpm) {
         this.wpm = wpm;
         this.timestamp = System.currentTimeMillis();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault());
         this.date = sdf.format(new Date(timestamp));
     }
 

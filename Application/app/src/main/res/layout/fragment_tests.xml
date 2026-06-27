@@ -74,7 +74,7 @@
 
         </LinearLayout>
 
-        <!-- Chart -->
+        <!-- نمودار پیشرفت -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -105,19 +105,12 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <HorizontalScrollView
+            <!-- نمودار با MPAndroidChart -->
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chartProgress"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/layoutChartBars"
-                    android:layout_width="wrap_content"
-                    android:layout_height="120dp"
-                    android:gravity="bottom"
-                    android:orientation="horizontal" />
-            </HorizontalScrollView>
+                android:layout_height="220dp"
+                android:layout_marginTop="12dp" />
 
             <TextView
                 android:id="@+id/tvNoData"
@@ -128,6 +121,59 @@
                 android:text="هنوز تستی ثبت نشده"
                 android:textColor="#B0BED0"
                 android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <!-- جدول تاریخچه تست‌ها -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_chart_container"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_history"
+                    android:tint="#6B7A8F" />
+
+                <TextView
+                    android:id="@+id/tvHistoryTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="تاریخچه تست‌ها"
+                    android:textColor="#6B7A8F"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false" />
+
+            <TextView
+                android:id="@+id/tvNoHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="20dp"
+                android:text="هیچ تستی ثبت نشده"
+                android:textColor="#B0BED0"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
     </LinearLayout>

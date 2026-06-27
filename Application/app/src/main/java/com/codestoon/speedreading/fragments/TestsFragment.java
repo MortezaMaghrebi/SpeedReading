@@ -1,5 +1,6 @@
 package com.codestoon.speedreading.fragments;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -12,23 +13,40 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.codestoon.speedreading.R;
+import com.codestoon.speedreading.adapters.HistoryAdapter;
 import com.codestoon.speedreading.models.TestResultModel;
 import com.codestoon.speedreading.utils.AssetsHelper;
 import com.codestoon.speedreading.utils.PreferencesHelper;
 import com.codestoon.speedreading.utils.WPMCalculator;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class TestsFragment extends Fragment {
 
     private TextView tvTestText;
     private Button btnTestStart, btnSaveResult;
-    private LinearLayout layoutChartBars;
-    private TextView tvNoData;
+    private LineChart chartProgress;
+    private TextView tvNoData, tvNoHistory;
     private TextView tvLanguageInfo;
-    private TextView tvChartTitle;
+    private TextView tvChartTitle, tvHistoryTitle;
+    private RecyclerView rvHistory;
+    private HistoryAdapter historyAdapter;
 
     private String currentText = "";
     private String currentLanguage = "fa";
@@ -53,15 +71,22 @@ public class TestsFragment extends Fragment {
         tvTestText = view.findViewById(R.id.tvTestText);
         btnTestStart = view.findViewById(R.id.btnTestStart);
         btnSaveResult = view.findViewById(R.id.btnSaveResult);
-        layoutChartBars = view.findViewById(R.id.layoutChartBars);
+        chartProgress = view.findViewById(R.id.chartProgress);
         tvNoData = view.findViewById(R.id.tvNoData);
+        tvNoHistory = view.findViewById(R.id.tvNoHistory);
         tvLanguageInfo = view.findViewById(R.id.tvLanguageInfo);
         tvChartTitle = view.findViewById(R.id.tvChartTitle);
+        tvHistoryTitle = view.findViewById(R.id.tvHistoryTitle);
+        rvHistory = view.findViewById(R.id.rvHistory);
+
+        rvHistory.setLayoutManager(new LinearLayoutManager(getContext()));
+        historyAdapter = new HistoryAdapter(new ArrayList<>());
+        rvHistory.setAdapter(historyAdapter);
 
         // تنظیم حالت اولیه
         showReadyMessage();
         updateLanguageInfo();
-        renderChart();
+        renderChartAndHistory();
 
         btnTestStart.setOnClickListener(v -> handleTestAction());
         btnSaveResult.setOnClickListener(v -> saveResult());
@@ -82,6 +107,7 @@ public class TestsFragment extends Fragment {
             showReadyMessage();
             updateLanguageInfo();
             updateChartTitle();
+            updateHistoryTitle();
         }
 
         if (isFinished) {
@@ -101,9 +127,19 @@ public class TestsFragment extends Fragment {
         if (tvChartTitle == null) return;
 
         if (currentLanguage.equals("fa")) {
-            tvChartTitle.setText(R.string.chart_title);
+            tvChartTitle.setText("پیشرفت تست‌ها (کلمه بر دقیقه)");
         } else {
-            tvChartTitle.setText(R.string.chart_title_en);
+            tvChartTitle.setText("Test Progress (Words Per Minute)");
+        }
+    }
+
+    private void updateHistoryTitle() {
+        if (tvHistoryTitle == null) return;
+
+        if (currentLanguage.equals("fa")) {
+            tvHistoryTitle.setText("تاریخچه تست‌ها");
+        } else {
+            tvHistoryTitle.setText("Test History");
         }
     }
 
@@ -243,8 +279,8 @@ public class TestsFragment extends Fragment {
         showResult(lastWpm);
 
         btnTestStart.setText(getRetryText());
-        btnTestStart.setBackgroundResource(R.drawable.bg_button_secondary);
-        btnTestStart.setTextColor(getResources().getColor(R.color.text_primary));
+        btnTestStart.setBackgroundResource(R.drawable.bg_button_secondary_white);
+        btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
         btnSaveResult.setVisibility(View.VISIBLE);
         btnSaveResult.setBackgroundResource(R.drawable.bg_button_success);
@@ -252,6 +288,9 @@ public class TestsFragment extends Fragment {
         btnSaveResult.setEnabled(true);
         btnSaveResult.setText(getSaveResultText());
         tvTestText.setEnabled(false);
+
+        // فقط نمودار را به‌روز می‌کنیم ولی نتیجه هنوز ذخیره نشده
+        renderChartAndHistory();
     }
 
     private void saveResult() {
@@ -270,8 +309,8 @@ public class TestsFragment extends Fragment {
         // به‌روزرسانی متن نتیجه با تیک سبز
         showSavedResult(lastWpm);
 
-        // به‌روزرسانی چارت
-        renderChart();
+        // به‌روزرسانی چارت و جدول
+        renderChartAndHistory();
     }
 
     private void resetTest() {
@@ -296,6 +335,9 @@ public class TestsFragment extends Fragment {
 
         showReadyMessage();
         updateLanguageInfo();
+
+        // به‌روزرسانی چارت و جدول
+        renderChartAndHistory();
     }
 
     private void loadRandomText() {
@@ -315,61 +357,114 @@ public class TestsFragment extends Fragment {
         }
     }
 
-    private void renderChart() {
-        if (layoutChartBars == null || tvNoData == null || getContext() == null) return;
+    private void renderChartAndHistory() {
+        if (getContext() == null) return;
 
         List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
-        layoutChartBars.removeAllViews();
 
+        // نمایش/مخفی کردن نمودار و جدول
         if (history.isEmpty()) {
+            chartProgress.setVisibility(View.GONE);
             tvNoData.setVisibility(View.VISIBLE);
+            rvHistory.setVisibility(View.GONE);
+            tvNoHistory.setVisibility(View.VISIBLE);
+
             if (currentLanguage.equals("fa")) {
                 tvNoData.setText(R.string.test_no_data);
+                tvNoHistory.setText("هیچ تستی ثبت نشده");
             } else {
                 tvNoData.setText(R.string.test_no_data_en);
+                tvNoHistory.setText("No tests recorded yet");
             }
             return;
         }
+
+        chartProgress.setVisibility(View.VISIBLE);
         tvNoData.setVisibility(View.GONE);
+        rvHistory.setVisibility(View.VISIBLE);
+        tvNoHistory.setVisibility(View.GONE);
 
-        int start = Math.max(0, history.size() - 10);
-        List<TestResultModel> displayData = history.subList(start, history.size());
+        // ========== رسم نمودار LineChart ==========
+        setupLineChart(history);
 
-        int maxWpm = 100;
-        for (TestResultModel result : displayData) {
-            if (result.getWpm() > maxWpm) maxWpm = result.getWpm();
-        }
-        maxWpm = Math.max(maxWpm, 100);
+        // ========== نمایش جدول تاریخچه ==========
+        historyAdapter.updateData(history);
+    }
 
-        for (int i = 0; i < displayData.size(); i++) {
-            TestResultModel result = displayData.get(i);
-            int heightPercent = Math.max((int)((result.getWpm() / (float)maxWpm) * 80), 6);
+    private void setupLineChart(List<TestResultModel> history) {
+        List<Entry> entries = new ArrayList<>();
+        int maxWpm = 0;
 
-            LinearLayout wrapper = new LinearLayout(getContext());
-            wrapper.setOrientation(LinearLayout.VERTICAL);
-            wrapper.setGravity(View.TEXT_ALIGNMENT_CENTER);
-            wrapper.setLayoutParams(new LinearLayout.LayoutParams(
-                    40, ViewGroup.LayoutParams.MATCH_PARENT));
-
-            View bar = new View(getContext());
-            bar.setBackgroundResource(R.drawable.bg_chart_bar);
-            LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
-                    28, heightPercent);
-            barParams.gravity = android.view.Gravity.BOTTOM;
-            bar.setLayoutParams(barParams);
-
-            TextView label = new TextView(getContext());
-            label.setText("#" + (start + i + 1));
-            label.setTextColor(getResources().getColor(R.color.text_light));
-            label.setTextSize(11);
-            label.setGravity(View.TEXT_ALIGNMENT_CENTER);
-
-            wrapper.addView(bar);
-            wrapper.addView(label);
-            layoutChartBars.addView(wrapper);
+        for (int i = 0; i < history.size(); i++) {
+            TestResultModel result = history.get(i);
+            entries.add(new Entry(i, result.getWpm()));
+            if (result.getWpm() > maxWpm) {
+                maxWpm = result.getWpm();
+            }
         }
 
-        updateChartTitle();
+        // تنظیم داده‌ها
+        LineDataSet dataSet = new LineDataSet(entries, currentLanguage.equals("fa") ? "WPM" : "WPM");
+        dataSet.setColor(Color.parseColor("#4A6CF7"));
+        dataSet.setCircleColor(Color.parseColor("#4A6CF7"));
+        dataSet.setCircleRadius(4f);
+        dataSet.setLineWidth(2.5f);
+        dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(Color.parseColor("#6B7A8F"));
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(Color.parseColor("#4A6CF7"));
+        dataSet.setFillAlpha(50);
+        dataSet.setDrawValues(true);
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // منحنی spline
+
+        List<ILineDataSet> dataSets = new ArrayList<>();
+        dataSets.add(dataSet);
+
+        LineData lineData = new LineData(dataSets);
+        chartProgress.setData(lineData);
+
+        // تنظیم محور X
+        XAxis xAxis = chartProgress.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(Color.parseColor("#6B7A8F"));
+        xAxis.setTextSize(10f);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return "#" + (int) (value + 1);
+            }
+        });
+
+        // تنظیم محور Y
+        YAxis yAxisLeft = chartProgress.getAxisLeft();
+        yAxisLeft.setTextColor(Color.parseColor("#6B7A8F"));
+        yAxisLeft.setTextSize(10f);
+        yAxisLeft.setDrawGridLines(true);
+        yAxisLeft.setGridColor(Color.parseColor("#EEF3FC"));
+        yAxisLeft.setAxisMinimum(0f);
+
+        // تنظیم حداکثر مقدار برای محور Y با کمی فاصله
+        int maxY = Math.max(maxWpm + 50, 100);
+        yAxisLeft.setAxisMaximum(maxY);
+
+        YAxis yAxisRight = chartProgress.getAxisRight();
+        yAxisRight.setEnabled(false);
+
+        // تنظیمات کلی نمودار
+        chartProgress.getDescription().setEnabled(false);
+        chartProgress.setTouchEnabled(true);
+        chartProgress.setDragEnabled(true);
+        chartProgress.setScaleEnabled(true);
+        chartProgress.setPinchZoom(true);
+        chartProgress.setBackgroundColor(Color.WHITE);
+        chartProgress.setExtraOffsets(10, 10, 10, 10);
+
+        // تنظیم حداقل نمایش برای دیده شدن
+        chartProgress.setVisibleXRangeMinimum(3f);
+
+        chartProgress.invalidate();
     }
 
     @Override
@@ -382,7 +477,7 @@ public class TestsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (isViewReady) {
-            renderChart();
+            renderChartAndHistory();
         }
     }
 }
