@@ -1,0 +1,17 @@
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- پس‌زمینه -->
+    <path
+        android:fillColor="#E8EBF0"
+        android:pathData="M21,3H3c-1.1,0-2,0.9-2,2v14c0,1.1,0.9,2,2,2h18c1.1,0,2-0.9,2-2V5c0-1.1-0.9-2-2-2z"/>
+    <!-- آیکون پخش -->
+    <path
+        android:fillColor="#4A6CF7"
+        android:pathData="M10,8.64v6.72L15.27,12 10,8.64z"/>
+</vector>

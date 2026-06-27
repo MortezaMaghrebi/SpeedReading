@@ -44,7 +44,41 @@ public class AssetsHelper {
                                 .replace(".3gp", "")
                                 .replace(".mov", "")
                                 .replace("_", " ");
-                        videos.add(new VideoModel(name, file));
+
+                        // بررسی وجود thumbnail
+                        String baseName = file.substring(0, file.lastIndexOf('.'));
+                        String thumbPath = "videos/" + folder + "/" + baseName + "_thumb.jpg";
+                        String thumbPathPng = "videos/" + folder + "/" + baseName + "_thumb.png";
+
+                        boolean hasThumb = false;
+                        String actualThumbPath = null;
+
+                        // بررسی JPG
+                        try {
+                            context.getAssets().open(thumbPath);
+                            hasThumb = true;
+                            actualThumbPath = thumbPath;
+                        } catch (IOException e) {
+                            // JPG وجود ندارد
+                        }
+
+                        // اگر JPG نبود، PNG را بررسی کن
+                        if (!hasThumb) {
+                            try {
+                                context.getAssets().open(thumbPathPng);
+                                hasThumb = true;
+                                actualThumbPath = thumbPathPng;
+                            } catch (IOException e) {
+                                // PNG هم وجود ندارد
+                            }
+                        }
+
+                        // اگر thumbnail وجود داشت، از آن استفاده کن
+                        if (hasThumb) {
+                            videos.add(new VideoModel(name, file, actualThumbPath));
+                        } else {
+                            videos.add(new VideoModel(name, file, null));
+                        }
                     }
                 }
             }

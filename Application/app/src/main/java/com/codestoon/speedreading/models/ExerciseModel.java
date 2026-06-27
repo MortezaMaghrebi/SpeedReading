@@ -8,7 +8,7 @@ public class ExerciseModel {
     private String description;
     private int iconRes;
     private int videoCount;
-    private List<VideoModel> videos; // لیست ویدیوها
+    private List<VideoModel> videos;
 
     public ExerciseModel(String id, String title, String description, int iconRes, int videoCount, List<VideoModel> videos) {
         this.id = id;

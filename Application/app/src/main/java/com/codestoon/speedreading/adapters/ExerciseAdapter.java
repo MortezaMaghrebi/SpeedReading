@@ -24,7 +24,6 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     private OnExerciseClickListener listener;
     private Context context;
 
-    // نگهداری وضعیت باز/بسته بودن هر آیتم
     private boolean[] expandedStates;
 
     public interface OnExerciseClickListener {
@@ -74,17 +73,16 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
         // کلیک روی آیتم برای باز/بسته کردن
         holder.itemView.setOnClickListener(v -> {
-            // تغییر وضعیت باز/بسته
             expandedStates[position] = !expandedStates[position];
 
-            // به‌روزرسانی آیکون فلش
             if (expandedStates[position]) {
                 holder.ivArrow.setImageResource(R.drawable.ic_arrow_up);
+                holder.ivArrow.animate().rotation(0).setDuration(200).start();
             } else {
                 holder.ivArrow.setImageResource(R.drawable.ic_arrow_down);
+                holder.ivArrow.animate().rotation(0).setDuration(200).start();
             }
 
-            // نمایش/مخفی کردن لیست ویدیوها
             if (holder.rvVideos.getAdapter() != null && holder.rvVideos.getAdapter().getItemCount() > 0) {
                 holder.layoutVideoContainer.setVisibility(expandedStates[position] ? View.VISIBLE : View.GONE);
             }
@@ -97,9 +95,32 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         // تنظیم آیکون فلش بر اساس وضعیت فعلی
         if (expandedStates[position]) {
             holder.ivArrow.setImageResource(R.drawable.ic_arrow_up);
+            holder.ivArrow.setRotation(0);
         } else {
             holder.ivArrow.setImageResource(R.drawable.ic_arrow_down);
+            holder.ivArrow.setRotation(0);
         }
+    }
+
+    @Override
+    public int getItemCount() {
+        return exercises != null ? exercises.size() : 0;
+    }
+
+    public void updateData(List<ExerciseModel> newExercises) {
+        this.exercises = newExercises;
+        this.expandedStates = new boolean[newExercises.size()];
+        notifyDataSetChanged();
+    }
+
+    public void updateCount(String id, int count) {
+        for (ExerciseModel exercise : exercises) {
+            if (exercise.getId().equals(id)) {
+                exercise.setVideoCount(count);
+                break;
+            }
+        }
+        notifyDataSetChanged();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -119,28 +140,4 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
             layoutVideoContainer = itemView.findViewById(R.id.layoutVideoContainer);
         }
     }
-
-    @Override
-    public int getItemCount() {
-        return exercises != null ? exercises.size() : 0;
-    }
-
-    // متد برای به‌روز کردن داده‌ها
-    public void updateData(List<ExerciseModel> newExercises) {
-        this.exercises = newExercises;
-        this.expandedStates = new boolean[newExercises.size()];
-        notifyDataSetChanged();
-    }
-
-    public void updateCount(String id, int count) {
-        for (ExerciseModel exercise : exercises) {
-            if (exercise.getId().equals(id)) {
-                exercise.setVideoCount(count);
-                break;
-            }
-        }
-        notifyDataSetChanged();
-    }
-
-
 }

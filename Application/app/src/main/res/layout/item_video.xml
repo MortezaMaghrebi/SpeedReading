@@ -1,29 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
     android:background="@drawable/bg_video_item_dark"
     android:orientation="horizontal"
     android:padding="12dp"
-    android:gravity="center_vertical"
     android:clickable="true"
-    android:focusable="true"
     android:layoutDirection="ltr"
+    android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground">
 
-    <!-- آیکون ویدیو با افکت گرادیانت -->
-    <LinearLayout
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:background="@drawable/bg_video_thumb_gradient"
-        android:gravity="center">
+    <!-- Thumbnail ویدیو -->
+    <FrameLayout
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        app:cornerRadius="8dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_video_file" />
-    </LinearLayout>
+            android:id="@+id/ivThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_video_placeholder" />
+
+        <!-- آیکون پخش روی Thumbnail -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play_white"
+            android:alpha="0.8" />
+    </FrameLayout>
 
     <!-- اطلاعات ویدیو -->
     <LinearLayout
@@ -31,7 +40,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginStart="14dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center_vertical">
 
         <TextView
             android:id="@+id/tvVideoName"
@@ -43,21 +53,43 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_video_file"
+                app:tint="#9AABB8" />
+
+            <TextView
+                android:id="@+id/tvVideoFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textColor="#9AABB8"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- دکمه پخش -->
     <LinearLayout
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:background="@drawable/bg_play_button"
-        android:gravity="center">
+        android:gravity="center"
+        android:layout_gravity="center_vertical">
 
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@drawable/ic_play_arrow"
-            android:tint="#4A6CF7" />
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_play_arrow" />
     </LinearLayout>
 
 </LinearLayout>
