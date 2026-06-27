@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">تندخوانی</string>
+    <string name="app_name_en">SpeedReading</string>
+
+    <string name="tab_exercises">تمرینات</string>
+    <string name="tab_tests">تست‌ها</string>
+
+    <string name="exercise_buildup">بیلد آپ</string>
+    <string name="exercise_buildup_desc">تمرینات پایه‌ای</string>
+
+    <string name="exercise_eye">تمرینات چشمی</string>
+    <string name="exercise_eye_desc">حرکات چشم و فوکوس</string>
+
+    <string name="exercise_speed">تمرینات سرعتی</string>
+    <string name="exercise_speed_desc">افزایش سرعت خواندن</string>
+
+    <string name="video_list_title">ویدیوها</string>
+
+    <string name="test_start">شروع تست</string>
+    <string name="test_reading">در حال مطالعه...</string>
+    <string name="test_finish">پایان مطالعه</string>
+    <string name="test_retry">تست مجدد</string>
+
+    <!-- توجه: برای استفاده از % در string باید از %% استفاده کرد -->
+    <string name="test_result">نتیجه تست: %1$d کلمه بر دقیقه\nزمان: %2$.1f ثانیه\nتعداد کلمات: %3$d</string>
+    <string name="test_result_en">Test Result: %1$d WPM\nTime: %2$.1f seconds\nWord Count: %3$d</string>
+    <string name="test_no_data">هنوز تستی ثبت نشده</string>
+    <string name="test_no_data_en">No tests recorded yet</string>
+    <string name="chart_title">پیشرفت تست‌ها (کلمه بر دقیقه)</string>
+    <string name="chart_title_en">Test Progress (Words Per Minute)</string>
+
+    <string name="video_count">%d ویدیو</string>
+    <string name="video_count_en">%d videos</string>
+
+    <string name="pref_test_history">test_history</string>
+
+    <string name="ready_message_fa">هر وقت آماده بودید، دکمه شروع تست را بزنید.</string>
+    <string name="ready_message_en">When you\'re ready, press the Start Test button.</string>
+
+    <string name="finish_reading_fa">پایان مطالعه</string>
+    <string name="finish_reading_en">Finish Reading</string>
+
+    <string name="retry_test_fa">تست مجدد</string>
+    <string name="retry_test_en">Retry Test</string>
+
+    <string name="start_test_fa">شروع تست</string>
+    <string name="start_test_en">Start Test</string>
+
+    <string name="language_info_fa">🌐 فارسی (%d متن)</string>
+    <string name="language_info_en">🌐 English (%d texts)</string>
+
+    <string name="no_text_found_fa">هیچ فایل متنی در پوشه texts/fa یافت نشد</string>
+    <string name="no_text_found_en">No text files found in texts/en folder</string>
+</resources>
