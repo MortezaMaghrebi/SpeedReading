@@ -61,7 +61,14 @@ public class ExercisesFragment extends Fragment {
         List<String> folders = AssetsHelper.getVideoFolders(getContext());
 
         exerciseList.clear();
+
         for (String folder : folders) {
+            // 1. اضافه کردن Header (با title و subtitle)
+            String headerTitle = getTitleForFolder(folder);
+            String headerSubtitle = getSubtitleForFolder(folder);
+            exerciseList.add(new ExerciseModel(folder + "_header", headerTitle, headerSubtitle));
+
+            // 2. اضافه کردن آیتم تمرین
             String title = getTitleForFolder(folder);
             String desc = getDescForFolder(folder);
             int icon = getIconForFolder(folder);
@@ -139,6 +146,24 @@ public class ExercisesFragment extends Fragment {
                 case "BuildUp": return "تمرینات پایه‌ای";
                 case "EyeTraining": return "حرکات چشم و فوکوس";
                 case "SpeedTraining": return "افزایش سرعت خواندن";
+                default: return "";
+            }
+        }
+    }
+
+    private String getSubtitleForFolder(String folder) {
+        if (currentLanguage.equals("en")) {
+            switch (folder) {
+                case "BuildUp": return "General eye speed exercise";
+                case "EyeTraining": return "Choose one based on your speed level";
+                case "SpeedTraining": return "Optional exercises for more speed";
+                default: return "";
+            }
+        } else {
+            switch (folder) {
+                case "BuildUp": return "تمرین عمومی افزایش سرعت چشم";
+                case "EyeTraining": return "یکی را بر اساس سرعت سطح خود انتخاب کنید";
+                case "SpeedTraining": return "تمرینات اختیاری برای سرعت بیشتر";
                 default: return "";
             }
         }
