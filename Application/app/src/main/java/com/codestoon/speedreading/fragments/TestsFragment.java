@@ -24,7 +24,7 @@ import java.util.List;
 public class TestsFragment extends Fragment {
 
     private TextView tvTestText;
-    private Button btnTestStart, btnTestReset;
+    private Button btnTestStart, btnSaveResult;
     private LinearLayout layoutChartBars;
     private TextView tvNoData;
     private TextView tvLanguageInfo;
@@ -35,7 +35,12 @@ public class TestsFragment extends Fragment {
     private long startTime = 0;
     private boolean isRunning = false;
     private boolean isFinished = false;
+    private boolean isResultSaved = false;
     private Handler timerHandler = new Handler();
+
+    private int lastWpm = 0;
+    private double lastElapsed = 0;
+    private int lastWordCount = 0;
 
     private boolean isViewReady = false;
 
@@ -47,7 +52,7 @@ public class TestsFragment extends Fragment {
 
         tvTestText = view.findViewById(R.id.tvTestText);
         btnTestStart = view.findViewById(R.id.btnTestStart);
-        btnTestReset = view.findViewById(R.id.btnTestReset);
+        btnSaveResult = view.findViewById(R.id.btnSaveResult);
         layoutChartBars = view.findViewById(R.id.layoutChartBars);
         tvNoData = view.findViewById(R.id.tvNoData);
         tvLanguageInfo = view.findViewById(R.id.tvLanguageInfo);
@@ -59,7 +64,7 @@ public class TestsFragment extends Fragment {
         renderChart();
 
         btnTestStart.setOnClickListener(v -> handleTestAction());
-        btnTestReset.setOnClickListener(v -> resetTest());
+        btnSaveResult.setOnClickListener(v -> saveResult());
 
         isViewReady = true;
 
@@ -81,17 +86,14 @@ public class TestsFragment extends Fragment {
 
         if (isFinished) {
             btnTestStart.setText(getRetryText());
+            btnSaveResult.setText(getSaveResultText());
         } else if (!isRunning) {
             btnTestStart.setText(getStartText());
         }
 
         String currentText = tvTestText.getText().toString();
-        if (isFinished && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
-            List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
-            if (!history.isEmpty()) {
-                TestResultModel lastResult = history.get(history.size() - 1);
-                showResult(lastResult.getWpm());
-            }
+        if (isFinished && !isResultSaved && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
+            showResult(lastWpm);
         }
     }
 
@@ -136,6 +138,12 @@ public class TestsFragment extends Fragment {
                 getString(R.string.retry_test_en);
     }
 
+    private String getSaveResultText() {
+        return currentLanguage.equals("fa") ?
+                "ذخیره نتیجه" :
+                "Save Result";
+    }
+
     private void showReadyMessage() {
         if (tvTestText == null) return;
 
@@ -157,30 +165,41 @@ public class TestsFragment extends Fragment {
 
         String resultText;
         if (currentLanguage.equals("fa")) {
-            resultText = "✅ " + getString(R.string.test_result, wpm, 0.0, 0);
+            resultText = "📊 " + getString(R.string.test_result, wpm, lastElapsed, lastWordCount);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
-            resultText = "✅ " + getString(R.string.test_result_en, wpm, 0.0, 0);
+            resultText = "📊 " + getString(R.string.test_result_en, wpm, lastElapsed, lastWordCount);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
         tvTestText.setText(resultText);
         tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         tvTestText.setGravity(android.view.Gravity.CENTER);
+    }
+
+    private void showSavedResult(int wpm) {
+        if (tvTestText == null) return;
+
+        String resultText;
         if (currentLanguage.equals("fa")) {
+            resultText = "✅ " + getString(R.string.test_result, wpm, lastElapsed, lastWordCount) + "\n✓ ذخیره شد";
             tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
+            resultText = "✅ " + getString(R.string.test_result_en, wpm, lastElapsed, lastWordCount) + "\n✓ Saved";
             tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
+        tvTestText.setText(resultText);
+        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvTestText.setGravity(android.view.Gravity.CENTER);
     }
 
     private void handleTestAction() {
         if (isRunning) {
             finishTest();
-            return;
-        }
-        if (isFinished) {
+        } else if (isFinished) {
             resetTest();
-            return;
+        } else {
+            startTest();
         }
-        startTest();
     }
 
     private void startTest() {
@@ -197,15 +216,14 @@ public class TestsFragment extends Fragment {
 
         isRunning = true;
         isFinished = false;
+        isResultSaved = false;
         startTime = System.currentTimeMillis();
 
         btnTestStart.setText(getFinishText());
         btnTestStart.setBackgroundResource(R.drawable.bg_button_success);
         btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
-        if (btnTestReset != null) {
-            btnTestReset.setVisibility(View.GONE);
-        }
+        btnSaveResult.setVisibility(View.GONE);
         tvTestText.setEnabled(false);
     }
 
@@ -214,35 +232,45 @@ public class TestsFragment extends Fragment {
 
         isRunning = false;
         isFinished = true;
+        isResultSaved = false;
 
         long elapsed = System.currentTimeMillis() - startTime;
-        int wpm = WPMCalculator.calculateWPM(currentText, elapsed / 1000);
-        int wordCount = WPMCalculator.countWords(currentText);
+        lastWpm = WPMCalculator.calculateWPM(currentText, elapsed / 1000);
+        lastElapsed = elapsed / 1000.0;
+        lastWordCount = WPMCalculator.countWords(currentText);
 
-        TestResultModel result = new TestResultModel(wpm);
-        PreferencesHelper.addTestResult(getContext(), result);
-
-        String resultText;
-        if (currentLanguage.equals("fa")) {
-            resultText = "✅ " + getString(R.string.test_result, wpm, elapsed / 1000.0, wordCount);
-            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        } else {
-            resultText = "✅ " + getString(R.string.test_result_en, wpm, elapsed / 1000.0, wordCount);
-            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        }
-        tvTestText.setText(resultText);
-        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        tvTestText.setGravity(android.view.Gravity.CENTER);
+        // نمایش نتیجه بدون ذخیره
+        showResult(lastWpm);
 
         btnTestStart.setText(getRetryText());
-        btnTestStart.setBackgroundResource(R.drawable.bg_button_success);
-        btnTestStart.setTextColor(getResources().getColor(R.color.white));
+        btnTestStart.setBackgroundResource(R.drawable.bg_button_secondary);
+        btnTestStart.setTextColor(getResources().getColor(R.color.text_primary));
         btnTestStart.setEnabled(true);
-        if (btnTestReset != null) {
-            btnTestReset.setVisibility(View.GONE);
-        }
+        btnSaveResult.setVisibility(View.VISIBLE);
+        btnSaveResult.setBackgroundResource(R.drawable.bg_button_success);
+        btnSaveResult.setTextColor(getResources().getColor(R.color.white));
+        btnSaveResult.setEnabled(true);
+        btnSaveResult.setText(getSaveResultText());
         tvTestText.setEnabled(false);
+    }
 
+    private void saveResult() {
+        if (!isFinished || isResultSaved) return;
+
+        // ذخیره نتیجه معتبر
+        TestResultModel result = new TestResultModel(lastWpm);
+        PreferencesHelper.addTestResult(getContext(), result);
+        isResultSaved = true;
+
+        // تغییر متن دکمه و غیرفعال کردن آن
+        btnSaveResult.setText(currentLanguage.equals("fa") ? "✓ ذخیره شد" : "✓ Saved");
+        btnSaveResult.setBackgroundResource(R.drawable.bg_button_success);
+        btnSaveResult.setEnabled(false);
+
+        // به‌روزرسانی متن نتیجه با تیک سبز
+        showSavedResult(lastWpm);
+
+        // به‌روزرسانی چارت
         renderChart();
     }
 
@@ -251,15 +279,19 @@ public class TestsFragment extends Fragment {
 
         isRunning = false;
         isFinished = false;
+        isResultSaved = false;
         startTime = 0;
+        lastWpm = 0;
+        lastElapsed = 0;
+        lastWordCount = 0;
 
         btnTestStart.setText(getStartText());
         btnTestStart.setBackgroundResource(R.drawable.bg_button_primary);
         btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
-        if (btnTestReset != null) {
-            btnTestReset.setVisibility(View.GONE);
-        }
+        btnSaveResult.setVisibility(View.GONE);
+        btnSaveResult.setEnabled(true);
+        btnSaveResult.setText(getSaveResultText());
         tvTestText.setEnabled(true);
 
         showReadyMessage();

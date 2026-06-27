@@ -45,38 +45,33 @@
                 android:textIsSelectable="true"
                 android:scrollbars="none" />
 
-            <LinearLayout
+            <!-- دکمه شروع تست / پایان مطالعه / تست مجدد -->
+            <Button
+                android:id="@+id/btnTestStart"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_button_primary"
+                android:padding="12dp"
+                android:text="شروع تست"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-                <Button
-                    android:id="@+id/btnTestStart"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_button_primary"
-                    android:padding="12dp"
-                    android:text="شروع تست"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+            <!-- دکمه ذخیره نتیجه (مخفی در حالت عادی) -->
+            <Button
+                android:id="@+id/btnSaveResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_button_success"
+                android:padding="12dp"
+                android:text="ذخیره نتیجه"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
 
-                <Button
-                    android:id="@+id/btnTestReset"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_button_secondary"
-                    android:padding="12dp"
-                    android:text="تست مجدد"
-                    android:textColor="#1A2639"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-            </LinearLayout>
         </LinearLayout>
 
         <!-- Chart -->
