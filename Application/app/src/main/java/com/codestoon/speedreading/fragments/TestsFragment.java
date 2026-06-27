@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -31,16 +32,14 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class TestsFragment extends Fragment {
 
+    private ScrollView scrollTests;
     private TextView tvTestText;
-    private Button btnTestStart, btnSaveResult;
+    private Button btnTestStart, btnDiscardResult;
     private LineChart chartProgress;
     private TextView tvNoData, tvNoHistory;
     private TextView tvLanguageInfo;
@@ -62,15 +61,21 @@ public class TestsFragment extends Fragment {
 
     private boolean isViewReady = false;
 
+    // محدودیت تعداد تست‌ها
+    private static final int MAX_HISTORY_SIZE = 30;
+    private static final int MAX_CHART_ITEMS = 30;
+    private static final int MAX_HISTORY_TABLE_ITEMS = 30;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tests, container, false);
 
+        scrollTests = view.findViewById(R.id.scrollTests);
         tvTestText = view.findViewById(R.id.tvTestText);
         btnTestStart = view.findViewById(R.id.btnTestStart);
-        btnSaveResult = view.findViewById(R.id.btnSaveResult);
+        btnDiscardResult = view.findViewById(R.id.btnDiscardResult);
         chartProgress = view.findViewById(R.id.chartProgress);
         tvNoData = view.findViewById(R.id.tvNoData);
         tvNoHistory = view.findViewById(R.id.tvNoHistory);
@@ -89,7 +94,7 @@ public class TestsFragment extends Fragment {
         renderChartAndHistory();
 
         btnTestStart.setOnClickListener(v -> handleTestAction());
-        btnSaveResult.setOnClickListener(v -> saveResult());
+        btnDiscardResult.setOnClickListener(v -> discardResult());
 
         isViewReady = true;
 
@@ -112,34 +117,38 @@ public class TestsFragment extends Fragment {
 
         if (isFinished) {
             btnTestStart.setText(getRetryText());
-            btnSaveResult.setText(getSaveResultText());
+            btnDiscardResult.setText(getDiscardText());
         } else if (!isRunning) {
             btnTestStart.setText(getStartText());
         }
 
         String currentText = tvTestText.getText().toString();
-        if (isFinished && !isResultSaved && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
-            showResult(lastWpm);
+        if (isFinished && isResultSaved && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
+            showSavedResult(lastWpm);
+        } else if (isFinished && !isResultSaved && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
+            showDiscardedResult(lastWpm);
         }
     }
 
     private void updateChartTitle() {
         if (tvChartTitle == null) return;
 
+        String title;
         if (currentLanguage.equals("fa")) {
-            tvChartTitle.setText("پیشرفت تست‌ها (کلمه بر دقیقه)");
+            title = "پیشرفت تست‌ها (آخرین " + MAX_CHART_ITEMS + " تست)";
         } else {
-            tvChartTitle.setText("Test Progress (Words Per Minute)");
+            title = "Test Progress (Last " + MAX_CHART_ITEMS + " tests)";
         }
+        tvChartTitle.setText(title);
     }
 
     private void updateHistoryTitle() {
         if (tvHistoryTitle == null) return;
 
         if (currentLanguage.equals("fa")) {
-            tvHistoryTitle.setText("تاریخچه تست‌ها");
+            tvHistoryTitle.setText("تاریخچه تست‌ها (آخرین " + MAX_HISTORY_TABLE_ITEMS + " تست)");
         } else {
-            tvHistoryTitle.setText("Test History");
+            tvHistoryTitle.setText("Test History (Last " + MAX_HISTORY_TABLE_ITEMS + " tests)");
         }
     }
 
@@ -174,10 +183,10 @@ public class TestsFragment extends Fragment {
                 getString(R.string.retry_test_en);
     }
 
-    private String getSaveResultText() {
+    private String getDiscardText() {
         return currentLanguage.equals("fa") ?
-                "ذخیره نتیجه" :
-                "Save Result";
+                "عدم ذخیره نتیجه" :
+                "Discard Result";
     }
 
     private void showReadyMessage() {
@@ -228,6 +237,22 @@ public class TestsFragment extends Fragment {
         tvTestText.setGravity(android.view.Gravity.CENTER);
     }
 
+    private void showDiscardedResult(int wpm) {
+        if (tvTestText == null) return;
+
+        String resultText;
+        if (currentLanguage.equals("fa")) {
+            resultText = "❌ " + getString(R.string.test_result, wpm, lastElapsed, lastWordCount) + "\n✗ ذخیره نشد";
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        } else {
+            resultText = "❌ " + getString(R.string.test_result_en, wpm, lastElapsed, lastWordCount) + "\n✗ Not saved";
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        }
+        tvTestText.setText(resultText);
+        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvTestText.setGravity(android.view.Gravity.CENTER);
+    }
+
     private void handleTestAction() {
         if (isRunning) {
             finishTest();
@@ -259,7 +284,7 @@ public class TestsFragment extends Fragment {
         btnTestStart.setBackgroundResource(R.drawable.bg_button_success);
         btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
-        btnSaveResult.setVisibility(View.GONE);
+        btnDiscardResult.setVisibility(View.GONE);
         tvTestText.setEnabled(false);
     }
 
@@ -268,46 +293,70 @@ public class TestsFragment extends Fragment {
 
         isRunning = false;
         isFinished = true;
-        isResultSaved = false;
 
         long elapsed = System.currentTimeMillis() - startTime;
         lastWpm = WPMCalculator.calculateWPM(currentText, elapsed / 1000);
         lastElapsed = elapsed / 1000.0;
         lastWordCount = WPMCalculator.countWords(currentText);
 
-        // نمایش نتیجه بدون ذخیره
-        showResult(lastWpm);
+        // ===== ذخیره خودکار نتیجه =====
+        saveResultAutomatically();
 
         btnTestStart.setText(getRetryText());
         btnTestStart.setBackgroundResource(R.drawable.bg_button_secondary_white);
         btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
-        btnSaveResult.setVisibility(View.VISIBLE);
-        btnSaveResult.setBackgroundResource(R.drawable.bg_button_success);
-        btnSaveResult.setTextColor(getResources().getColor(R.color.white));
-        btnSaveResult.setEnabled(true);
-        btnSaveResult.setText(getSaveResultText());
+        btnDiscardResult.setVisibility(View.VISIBLE);
+        btnDiscardResult.setBackgroundResource(R.drawable.bg_button_danger);
+        btnDiscardResult.setTextColor(getResources().getColor(R.color.white));
+        btnDiscardResult.setEnabled(true);
+        btnDiscardResult.setText(getDiscardText());
         tvTestText.setEnabled(false);
 
-        // فقط نمودار را به‌روز می‌کنیم ولی نتیجه هنوز ذخیره نشده
+        // ===== اسکرول به بالای صفحه =====
+        scrollToTop();
+    }
+
+    private void saveResultAutomatically() {
+        // دریافت تاریخچه فعلی
+        List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
+
+        // اگر تعداد تست‌ها از MAX_HISTORY_SIZE بیشتر شد، قدیمی‌ترین را حذف کن
+        while (history.size() >= MAX_HISTORY_SIZE) {
+            history.remove(0);
+        }
+
+        // اضافه کردن نتیجه جدید
+        TestResultModel result = new TestResultModel(lastWpm);
+        history.add(result);
+        PreferencesHelper.saveTestHistory(getContext(), history);
+        isResultSaved = true;
+
+        // نمایش نتیجه ذخیره شده
+        showSavedResult(lastWpm);
+
+        // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
     }
 
-    private void saveResult() {
-        if (!isFinished || isResultSaved) return;
+    private void discardResult() {
+        if (!isFinished || !isResultSaved) return;
 
-        // ذخیره نتیجه معتبر
-        TestResultModel result = new TestResultModel(lastWpm);
-        PreferencesHelper.addTestResult(getContext(), result);
-        isResultSaved = true;
+        // حذف آخرین نتیجه ذخیره شده
+        List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
+        if (!history.isEmpty()) {
+            history.remove(history.size() - 1);
+            PreferencesHelper.saveTestHistory(getContext(), history);
+        }
+        isResultSaved = false;
 
         // تغییر متن دکمه و غیرفعال کردن آن
-        btnSaveResult.setText(currentLanguage.equals("fa") ? "✓ ذخیره شد" : "✓ Saved");
-        btnSaveResult.setBackgroundResource(R.drawable.bg_button_success);
-        btnSaveResult.setEnabled(false);
+        btnDiscardResult.setText(currentLanguage.equals("fa") ? "✗ حذف شد" : "✗ Discarded");
+        btnDiscardResult.setBackgroundResource(R.drawable.bg_button_danger);
+        btnDiscardResult.setEnabled(false);
 
-        // به‌روزرسانی متن نتیجه با تیک سبز
-        showSavedResult(lastWpm);
+        // نمایش نتیجه ذخیره نشده
+        showDiscardedResult(lastWpm);
 
         // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
@@ -328,9 +377,9 @@ public class TestsFragment extends Fragment {
         btnTestStart.setBackgroundResource(R.drawable.bg_button_primary);
         btnTestStart.setTextColor(getResources().getColor(R.color.white));
         btnTestStart.setEnabled(true);
-        btnSaveResult.setVisibility(View.GONE);
-        btnSaveResult.setEnabled(true);
-        btnSaveResult.setText(getSaveResultText());
+        btnDiscardResult.setVisibility(View.GONE);
+        btnDiscardResult.setEnabled(true);
+        btnDiscardResult.setText(getDiscardText());
         tvTestText.setEnabled(true);
 
         showReadyMessage();
@@ -338,6 +387,15 @@ public class TestsFragment extends Fragment {
 
         // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
+    }
+
+    private void scrollToTop() {
+        if (scrollTests != null) {
+            scrollTests.post(() -> {
+                scrollTests.fullScroll(ScrollView.FOCUS_UP);
+                scrollTests.smoothScrollTo(0, 0);
+            });
+        }
     }
 
     private void loadRandomText() {
@@ -387,20 +445,39 @@ public class TestsFragment extends Fragment {
         // ========== رسم نمودار LineChart ==========
         setupLineChart(history);
 
-        // ========== نمایش جدول تاریخچه ==========
-        historyAdapter.updateData(history);
+        // ========== نمایش جدول تاریخچه (آخرین 30 تست) ==========
+        int startIndex = Math.max(0, history.size() - MAX_HISTORY_TABLE_ITEMS);
+        List<TestResultModel> displayHistory = history.subList(startIndex, history.size());
+        historyAdapter.updateData(displayHistory);
+
+        // به‌روزرسانی عنوان جدول
+        updateHistoryTitle();
+
+        // به‌روزرسانی عنوان نمودار
+        updateChartTitle();
     }
 
     private void setupLineChart(List<TestResultModel> history) {
+        // فقط آخرین MAX_CHART_ITEMS تست را در نمودار نمایش بده
+        int startIndex = Math.max(0, history.size() - MAX_CHART_ITEMS);
+        List<TestResultModel> chartHistory = history.subList(startIndex, history.size());
+
         List<Entry> entries = new ArrayList<>();
         int maxWpm = 0;
 
-        for (int i = 0; i < history.size(); i++) {
-            TestResultModel result = history.get(i);
+        for (int i = 0; i < chartHistory.size(); i++) {
+            TestResultModel result = chartHistory.get(i);
             entries.add(new Entry(i, result.getWpm()));
             if (result.getWpm() > maxWpm) {
                 maxWpm = result.getWpm();
             }
+        }
+
+        // اگر داده‌ای وجود نداشت، برگرد
+        if (entries.isEmpty()) {
+            chartProgress.setVisibility(View.GONE);
+            tvNoData.setVisibility(View.VISIBLE);
+            return;
         }
 
         // تنظیم داده‌ها
@@ -415,7 +492,7 @@ public class TestsFragment extends Fragment {
         dataSet.setFillColor(Color.parseColor("#4A6CF7"));
         dataSet.setFillAlpha(50);
         dataSet.setDrawValues(true);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // منحنی spline
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
         List<ILineDataSet> dataSets = new ArrayList<>();
         dataSets.add(dataSet);
@@ -445,7 +522,6 @@ public class TestsFragment extends Fragment {
         yAxisLeft.setGridColor(Color.parseColor("#EEF3FC"));
         yAxisLeft.setAxisMinimum(0f);
 
-        // تنظیم حداکثر مقدار برای محور Y با کمی فاصله
         int maxY = Math.max(maxWpm + 50, 100);
         yAxisLeft.setAxisMaximum(maxY);
 
@@ -460,8 +536,6 @@ public class TestsFragment extends Fragment {
         chartProgress.setPinchZoom(true);
         chartProgress.setBackgroundColor(Color.WHITE);
         chartProgress.setExtraOffsets(10, 10, 10, 10);
-
-        // تنظیم حداقل نمایش برای دیده شدن
         chartProgress.setVisibleXRangeMinimum(3f);
 
         chartProgress.invalidate();
