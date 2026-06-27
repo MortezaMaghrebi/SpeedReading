@@ -51,4 +51,5 @@
 
     <string name="no_text_found_fa">هیچ فایل متنی در پوشه texts/fa یافت نشد</string>
     <string name="no_text_found_en">No text files found in texts/en folder</string>
+    <string name="tab_games">بازی‌ها</string>
 </resources>

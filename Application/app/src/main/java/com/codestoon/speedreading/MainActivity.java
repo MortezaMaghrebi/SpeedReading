@@ -11,18 +11,21 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.codestoon.speedreading.fragments.ExercisesFragment;
+import com.codestoon.speedreading.fragments.GamesFragment;
 import com.codestoon.speedreading.fragments.TestsFragment;
 
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tabExercises, tabTests;
+    private TextView tabExercises, tabTests, tabGames;
     private TextView tvLangFa, tvLangEn;
     private TextView tvAppName;
 
     private ExercisesFragment exercisesFragment;
     private TestsFragment testsFragment;
+    private GamesFragment gamesFragment;
+
     private String currentLanguage = "fa";
     private int currentTab = R.id.tabExercises;
 
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         tabExercises = findViewById(R.id.tabExercises);
         tabTests = findViewById(R.id.tabTests);
+        tabGames = findViewById(R.id.tabGames);
         tvLangFa = findViewById(R.id.tvLangFa);
         tvLangEn = findViewById(R.id.tvLangEn);
         tvAppName = findViewById(R.id.tvAppName);
@@ -40,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         // ایجاد فرگمنت‌ها
         exercisesFragment = new ExercisesFragment();
         testsFragment = new TestsFragment();
+        gamesFragment = new GamesFragment();
 
         setupTabs();
         setupLanguageToggle();
@@ -59,6 +64,11 @@ public class MainActivity extends AppCompatActivity {
             currentTab = R.id.tabTests;
             switchTab(v.getId());
         });
+
+        tabGames.setOnClickListener(v -> {
+            currentTab = R.id.tabGames;
+            switchTab(v.getId());
+        });
     }
 
     private void switchTab(int tabId) {
@@ -66,12 +76,18 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction transaction = fm.beginTransaction();
 
         // مخفی کردن همه فرگمنت‌ها
-        if (exercisesFragment != null) {
+        if (exercisesFragment != null && exercisesFragment.isAdded()) {
             transaction.hide(exercisesFragment);
         }
-        if (testsFragment != null) {
+        if (testsFragment != null && testsFragment.isAdded()) {
             transaction.hide(testsFragment);
         }
+        if (gamesFragment != null && gamesFragment.isAdded()) {
+            transaction.hide(gamesFragment);
+        }
+
+        // ریست کردن همه تب‌ها
+        resetTabs();
 
         if (tabId == R.id.tabExercises) {
             if (!exercisesFragment.isAdded()) {
@@ -81,9 +97,13 @@ public class MainActivity extends AppCompatActivity {
 
             tabExercises.setBackgroundResource(R.drawable.bg_tab_active);
             tabExercises.setTextColor(getResources().getColor(R.color.text_primary));
-            tabTests.setBackgroundResource(android.R.color.transparent);
-            tabTests.setTextColor(getResources().getColor(R.color.text_secondary));
-        } else {
+            if (currentLanguage.equals("fa")) {
+                tabExercises.setText(R.string.tab_exercises);
+            } else {
+                tabExercises.setText("Exercises");
+            }
+
+        } else if (tabId == R.id.tabTests) {
             if (!testsFragment.isAdded()) {
                 transaction.add(R.id.fragmentContainer, testsFragment, "TestsFragment");
             }
@@ -91,11 +111,42 @@ public class MainActivity extends AppCompatActivity {
 
             tabTests.setBackgroundResource(R.drawable.bg_tab_active);
             tabTests.setTextColor(getResources().getColor(R.color.text_primary));
-            tabExercises.setBackgroundResource(android.R.color.transparent);
-            tabExercises.setTextColor(getResources().getColor(R.color.text_secondary));
+            if (currentLanguage.equals("fa")) {
+                tabTests.setText(R.string.tab_tests);
+            } else {
+                tabTests.setText("Tests");
+            }
+
+        } else if (tabId == R.id.tabGames) {
+            if (!gamesFragment.isAdded()) {
+                transaction.add(R.id.fragmentContainer, gamesFragment, "GamesFragment");
+            }
+            transaction.show(gamesFragment);
+
+            tabGames.setBackgroundResource(R.drawable.bg_tab_active);
+            tabGames.setTextColor(getResources().getColor(R.color.text_primary));
+            if (currentLanguage.equals("fa")) {
+                tabGames.setText("بازی‌ها");
+            } else {
+                tabGames.setText("Games");
+            }
         }
 
         transaction.commitNow();
+    }
+
+    private void resetTabs() {
+        // ریست کردن تب Exercises
+        tabExercises.setBackgroundResource(android.R.color.transparent);
+        tabExercises.setTextColor(getResources().getColor(R.color.text_secondary));
+
+        // ریست کردن تب Tests
+        tabTests.setBackgroundResource(android.R.color.transparent);
+        tabTests.setTextColor(getResources().getColor(R.color.text_secondary));
+
+        // ریست کردن تب Games
+        tabGames.setBackgroundResource(android.R.color.transparent);
+        tabGames.setTextColor(getResources().getColor(R.color.text_secondary));
     }
 
     private void setupLanguageToggle() {
@@ -150,17 +201,22 @@ public class MainActivity extends AppCompatActivity {
         if ("en".equals(lang)) {
             tabExercises.setText("Exercises");
             tabTests.setText("Tests");
+            tabGames.setText("Games");
         } else {
             tabExercises.setText(R.string.tab_exercises);
             tabTests.setText(R.string.tab_tests);
+            tabGames.setText(R.string.tab_games);
         }
 
         // به‌روز کردن فرگمنت‌ها
-        if (exercisesFragment != null) {
+        if (exercisesFragment != null && exercisesFragment.isAdded()) {
             exercisesFragment.onLanguageChanged(lang);
         }
-        if (testsFragment != null) {
+        if (testsFragment != null && testsFragment.isAdded()) {
             testsFragment.onLanguageChanged(lang);
+        }
+        if (gamesFragment != null && gamesFragment.isAdded()) {
+            gamesFragment.onLanguageChanged(lang);
         }
     }
 

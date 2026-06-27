@@ -101,7 +101,7 @@
             android:padding="12dp"
             android:text="تمرینات"
             android:textColor="#1A2639"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <TextView
@@ -115,7 +115,21 @@
             android:padding="12dp"
             android:text="تست‌ها"
             android:textColor="#6B7A8F"
-            android:textSize="16sp"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tabGames"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_game"
+            android:drawablePadding="8dp"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="بازی‌ها"
+            android:textColor="#6B7A8F"
+            android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
 
