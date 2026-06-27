@@ -4,56 +4,87 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     android:background="@drawable/bg_exercise_card"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- هدر آیتم -->
     <LinearLayout
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:background="@drawable/bg_exercise_icon"
-        android:gravity="center">
-
-        <ImageView
-            android:id="@+id/ivExerciseIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginStart="16dp"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tvExerciseTitle"
+        <LinearLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_exercise_icon"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/ivExerciseIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvExerciseTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1A2639"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvExerciseDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#7B8AA0"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#1A2639"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tvExerciseDesc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#7B8AA0"
-            android:textSize="14sp" />
+            <TextView
+                android:id="@+id/tvExerciseBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#4A6CF7"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:radius="30dp"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_arrow_down" />
+        </LinearLayout>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvExerciseBadge"
-        android:layout_width="wrap_content"
+    <!-- لیست ویدیوها (مخفی در حالت عادی) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvVideos"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#4A6CF7"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:radius="30dp"
-        android:text="0"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="12dp"
+        android:nestedScrollingEnabled="false"
+        android:visibility="gone" />
+
 </LinearLayout>
