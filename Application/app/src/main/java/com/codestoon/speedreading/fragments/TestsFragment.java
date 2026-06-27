@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -24,7 +23,7 @@ import java.util.List;
 
 public class TestsFragment extends Fragment {
 
-    private EditText etTestText;
+    private TextView tvTestText;
     private Button btnTestStart, btnTestReset;
     private LinearLayout layoutChartBars;
     private TextView tvNoData;
@@ -38,7 +37,6 @@ public class TestsFragment extends Fragment {
     private boolean isFinished = false;
     private Handler timerHandler = new Handler();
 
-    // پرچم برای بررسی اینکه آیا View آماده است
     private boolean isViewReady = false;
 
     @Nullable
@@ -47,7 +45,7 @@ public class TestsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tests, container, false);
 
-        etTestText = view.findViewById(R.id.etTestText);
+        tvTestText = view.findViewById(R.id.tvTestText);
         btnTestStart = view.findViewById(R.id.btnTestStart);
         btnTestReset = view.findViewById(R.id.btnTestReset);
         layoutChartBars = view.findViewById(R.id.layoutChartBars);
@@ -69,7 +67,6 @@ public class TestsFragment extends Fragment {
     }
 
     public void onLanguageChanged(String language) {
-        // فقط اگر View آماده باشد اجرا کن
         if (!isViewReady) {
             return;
         }
@@ -82,15 +79,13 @@ public class TestsFragment extends Fragment {
             updateChartTitle();
         }
 
-        // به‌روز کردن دکمه‌ها
         if (isFinished) {
             btnTestStart.setText(getRetryText());
         } else if (!isRunning) {
             btnTestStart.setText(getStartText());
         }
 
-        // به‌روز کردن نتیجه اگر نمایش داده شده
-        String currentText = etTestText.getText().toString();
+        String currentText = tvTestText.getText().toString();
         if (isFinished && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
             List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
             if (!history.isEmpty()) {
@@ -142,24 +137,23 @@ public class TestsFragment extends Fragment {
     }
 
     private void showReadyMessage() {
-        if (etTestText == null) return;
+        if (tvTestText == null) return;
 
         String message;
         if (currentLanguage.equals("fa")) {
             message = getString(R.string.ready_message_fa);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
             message = getString(R.string.ready_message_en);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-        etTestText.setText("📚 " + message);
-        etTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        etTestText.setGravity(android.view.Gravity.CENTER);
-        adjustTextHeight();
+        tvTestText.setText("📚 " + message);
+        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvTestText.setGravity(android.view.Gravity.CENTER);
     }
 
     private void showResult(int wpm) {
-        if (etTestText == null) return;
+        if (tvTestText == null) return;
 
         String resultText;
         if (currentLanguage.equals("fa")) {
@@ -167,34 +161,14 @@ public class TestsFragment extends Fragment {
         } else {
             resultText = "✅ " + getString(R.string.test_result_en, wpm, 0.0, 0);
         }
-        etTestText.setText(resultText);
-        etTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        etTestText.setGravity(android.view.Gravity.CENTER);
+        tvTestText.setText(resultText);
+        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvTestText.setGravity(android.view.Gravity.CENTER);
         if (currentLanguage.equals("fa")) {
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-        adjustTextHeight();
-    }
-
-    private void adjustTextHeight() {
-        if (etTestText == null) return;
-
-        etTestText.post(() -> {
-            int contentHeight = etTestText.getLineCount() * etTestText.getLineHeight();
-            int padding = etTestText.getPaddingTop() + etTestText.getPaddingBottom();
-            int totalHeight = contentHeight + padding;
-
-            int minHeight = (int) (200 * getResources().getDisplayMetrics().density);
-            if (totalHeight < minHeight) {
-                totalHeight = minHeight;
-            }
-
-            ViewGroup.LayoutParams params = etTestText.getLayoutParams();
-            params.height = totalHeight;
-            etTestText.setLayoutParams(params);
-        });
     }
 
     private void handleTestAction() {
@@ -210,18 +184,16 @@ public class TestsFragment extends Fragment {
     }
 
     private void startTest() {
-        if (etTestText == null || btnTestStart == null) return;
+        if (tvTestText == null || btnTestStart == null) return;
 
         loadRandomText();
-        currentText = etTestText.getText().toString();
+        currentText = tvTestText.getText().toString();
 
         if (currentLanguage.equals("fa")) {
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-
-        adjustTextHeight();
 
         isRunning = true;
         isFinished = false;
@@ -234,11 +206,11 @@ public class TestsFragment extends Fragment {
         if (btnTestReset != null) {
             btnTestReset.setVisibility(View.GONE);
         }
-        etTestText.setEnabled(false);
+        tvTestText.setEnabled(false);
     }
 
     private void finishTest() {
-        if (!isRunning || etTestText == null || btnTestStart == null) return;
+        if (!isRunning || tvTestText == null || btnTestStart == null) return;
 
         isRunning = false;
         isFinished = true;
@@ -253,15 +225,14 @@ public class TestsFragment extends Fragment {
         String resultText;
         if (currentLanguage.equals("fa")) {
             resultText = "✅ " + getString(R.string.test_result, wpm, elapsed / 1000.0, wordCount);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
             resultText = "✅ " + getString(R.string.test_result_en, wpm, elapsed / 1000.0, wordCount);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-        etTestText.setText(resultText);
-        etTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        etTestText.setGravity(android.view.Gravity.CENTER);
-        adjustTextHeight();
+        tvTestText.setText(resultText);
+        tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvTestText.setGravity(android.view.Gravity.CENTER);
 
         btnTestStart.setText(getRetryText());
         btnTestStart.setBackgroundResource(R.drawable.bg_button_success);
@@ -270,13 +241,13 @@ public class TestsFragment extends Fragment {
         if (btnTestReset != null) {
             btnTestReset.setVisibility(View.GONE);
         }
-        etTestText.setEnabled(false);
+        tvTestText.setEnabled(false);
 
         renderChart();
     }
 
     private void resetTest() {
-        if (etTestText == null || btnTestStart == null) return;
+        if (tvTestText == null || btnTestStart == null) return;
 
         isRunning = false;
         isFinished = false;
@@ -289,29 +260,27 @@ public class TestsFragment extends Fragment {
         if (btnTestReset != null) {
             btnTestReset.setVisibility(View.GONE);
         }
-        etTestText.setEnabled(true);
+        tvTestText.setEnabled(true);
 
         showReadyMessage();
         updateLanguageInfo();
     }
 
     private void loadRandomText() {
-        if (etTestText == null || getContext() == null) return;
+        if (tvTestText == null || getContext() == null) return;
 
         String content = AssetsHelper.getRandomText(getContext(), currentLanguage);
-        etTestText.setText(content);
+        tvTestText.setText(content);
 
         if (currentLanguage.equals("fa")) {
-            etTestText.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            etTestText.setGravity(android.view.Gravity.START);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            tvTestText.setGravity(android.view.Gravity.START);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         } else {
-            etTestText.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            etTestText.setGravity(android.view.Gravity.START);
-            etTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            tvTestText.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            tvTestText.setGravity(android.view.Gravity.START);
+            tvTestText.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-
-        adjustTextHeight();
     }
 
     private void renderChart() {
