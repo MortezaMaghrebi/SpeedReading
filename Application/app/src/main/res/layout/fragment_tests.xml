@@ -30,7 +30,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <!-- TextView برای نمایش متن تست (به جای EditText) -->
+            <!-- TextView برای نمایش متن تست -->
             <TextView
                 android:id="@+id/tvTestText"
                 android:layout_width="match_parent"

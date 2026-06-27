@@ -8,8 +8,8 @@
     android:orientation="horizontal"
     android:padding="12dp"
     android:clickable="true"
-    android:layoutDirection="ltr"
     android:focusable="true"
+    android:layoutDirection="ltr"
     android:foreground="?android:attr/selectableItemBackground">
 
     <!-- Thumbnail ویدیو -->

@@ -1,5 +1,6 @@
 package com.codestoon.speedreading;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -11,6 +12,8 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.codestoon.speedreading.fragments.ExercisesFragment;
 import com.codestoon.speedreading.fragments.TestsFragment;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (tabId == R.id.tabExercises) {
-            // اضافه کردن اگر وجود ندارد
             if (!exercisesFragment.isAdded()) {
                 transaction.add(R.id.fragmentContainer, exercisesFragment, "ExercisesFragment");
             }
@@ -117,6 +119,26 @@ public class MainActivity extends AppCompatActivity {
     private void setLanguage(String lang) {
         currentLanguage = lang;
 
+        // تغییر Locale
+        Locale locale;
+        if ("en".equals(lang)) {
+            locale = new Locale("en");
+        } else {
+            locale = new Locale("fa");
+        }
+        Locale.setDefault(locale);
+
+        // تغییر جهت layout
+        int layoutDirection;
+        if ("fa".equals(lang)) {
+            layoutDirection = View.LAYOUT_DIRECTION_RTL;
+        } else {
+            layoutDirection = View.LAYOUT_DIRECTION_LTR;
+        }
+
+        // اعمال جهت به Activity
+        getWindow().getDecorView().setLayoutDirection(layoutDirection);
+
         // به‌روز کردن نام برنامه
         if ("en".equals(lang)) {
             tvAppName.setText(R.string.app_name_en);
@@ -140,5 +162,14 @@ public class MainActivity extends AppCompatActivity {
         if (testsFragment != null) {
             testsFragment.onLanguageChanged(lang);
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // در صورت تغییر configuration، جهت را دوباره اعمال کن
+        int layoutDirection = "fa".equals(currentLanguage) ?
+                View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR;
+        getWindow().getDecorView().setLayoutDirection(layoutDirection);
     }
 }

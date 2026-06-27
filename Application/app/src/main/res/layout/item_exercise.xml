@@ -78,7 +78,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- لیست ویدیوها با پس‌زمینه تیره‌تر -->
+    <!-- لیست ویدیوها -->
     <LinearLayout
         android:id="@+id/layoutVideoContainer"
         android:layout_width="match_parent"
