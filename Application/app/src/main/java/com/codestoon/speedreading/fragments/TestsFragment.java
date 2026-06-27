@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -39,7 +40,7 @@ public class TestsFragment extends Fragment {
 
     private ScrollView scrollTests;
     private TextView tvTestText;
-    private Button btnTestStart, btnDiscardResult;
+    private Button btnTestStart, btnDiscardResult, btnClearHistory;
     private LineChart chartProgress;
     private TextView tvNoData, tvNoHistory;
     private TextView tvLanguageInfo;
@@ -76,6 +77,7 @@ public class TestsFragment extends Fragment {
         tvTestText = view.findViewById(R.id.tvTestText);
         btnTestStart = view.findViewById(R.id.btnTestStart);
         btnDiscardResult = view.findViewById(R.id.btnDiscardResult);
+        btnClearHistory = view.findViewById(R.id.btnClearHistory);
         chartProgress = view.findViewById(R.id.chartProgress);
         tvNoData = view.findViewById(R.id.tvNoData);
         tvNoHistory = view.findViewById(R.id.tvNoHistory);
@@ -95,6 +97,7 @@ public class TestsFragment extends Fragment {
 
         btnTestStart.setOnClickListener(v -> handleTestAction());
         btnDiscardResult.setOnClickListener(v -> discardResult());
+        btnClearHistory.setOnClickListener(v -> showClearHistoryDialog());
 
         isViewReady = true;
 
@@ -121,6 +124,9 @@ public class TestsFragment extends Fragment {
         } else if (!isRunning) {
             btnTestStart.setText(getStartText());
         }
+
+        // به‌روزرسانی متن دکمه حذف تاریخچه
+        updateClearHistoryButtonText();
 
         String currentText = tvTestText.getText().toString();
         if (isFinished && isResultSaved && (currentText.contains("نتیجه") || currentText.contains("Result"))) {
@@ -149,6 +155,16 @@ public class TestsFragment extends Fragment {
             tvHistoryTitle.setText("تاریخچه تست‌ها (آخرین " + MAX_HISTORY_TABLE_ITEMS + " تست)");
         } else {
             tvHistoryTitle.setText("Test History (Last " + MAX_HISTORY_TABLE_ITEMS + " tests)");
+        }
+    }
+
+    private void updateClearHistoryButtonText() {
+        if (btnClearHistory == null) return;
+
+        if (currentLanguage.equals("fa")) {
+            btnClearHistory.setText("🗑️ حذف همه");
+        } else {
+            btnClearHistory.setText("🗑️ Clear All");
         }
     }
 
@@ -299,7 +315,7 @@ public class TestsFragment extends Fragment {
         lastElapsed = elapsed / 1000.0;
         lastWordCount = WPMCalculator.countWords(currentText);
 
-        // ===== ذخیره خودکار نتیجه =====
+        // ذخیره خودکار نتیجه
         saveResultAutomatically();
 
         btnTestStart.setText(getRetryText());
@@ -313,36 +329,29 @@ public class TestsFragment extends Fragment {
         btnDiscardResult.setText(getDiscardText());
         tvTestText.setEnabled(false);
 
-        // ===== اسکرول به بالای صفحه =====
+        // اسکرول به بالای صفحه
         scrollToTop();
     }
 
     private void saveResultAutomatically() {
-        // دریافت تاریخچه فعلی
         List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
 
-        // اگر تعداد تست‌ها از MAX_HISTORY_SIZE بیشتر شد، قدیمی‌ترین را حذف کن
         while (history.size() >= MAX_HISTORY_SIZE) {
             history.remove(0);
         }
 
-        // اضافه کردن نتیجه جدید
         TestResultModel result = new TestResultModel(lastWpm);
         history.add(result);
         PreferencesHelper.saveTestHistory(getContext(), history);
         isResultSaved = true;
 
-        // نمایش نتیجه ذخیره شده
         showSavedResult(lastWpm);
-
-        // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
     }
 
     private void discardResult() {
         if (!isFinished || !isResultSaved) return;
 
-        // حذف آخرین نتیجه ذخیره شده
         List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
         if (!history.isEmpty()) {
             history.remove(history.size() - 1);
@@ -350,16 +359,68 @@ public class TestsFragment extends Fragment {
         }
         isResultSaved = false;
 
-        // تغییر متن دکمه و غیرفعال کردن آن
         btnDiscardResult.setText(currentLanguage.equals("fa") ? "✗ حذف شد" : "✗ Discarded");
         btnDiscardResult.setBackgroundResource(R.drawable.bg_button_danger);
         btnDiscardResult.setEnabled(false);
 
-        // نمایش نتیجه ذخیره نشده
         showDiscardedResult(lastWpm);
-
-        // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
+    }
+
+    private void showClearHistoryDialog() {
+        List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
+        if (history.isEmpty()) {
+            // اگر تاریخچه خالی است، پیام نمایش بده
+            String message = currentLanguage.equals("fa") ?
+                    "تاریخچه قبلاً خالی است" :
+                    "History is already empty";
+            showToast(message);
+            return;
+        }
+
+        String title, message, positiveText, negativeText;
+        if (currentLanguage.equals("fa")) {
+            title = "حذف تمام تاریخچه";
+            message = "آیا از حذف تمام " + history.size() + " تست ثبت شده اطمینان دارید؟";
+            positiveText = "حذف همه";
+            negativeText = "انصراف";
+        } else {
+            title = "Clear All History";
+            message = "Are you sure you want to delete all " + history.size() + " recorded tests?";
+            positiveText = "Clear All";
+            negativeText = "Cancel";
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(positiveText, (dialog, which) -> clearAllHistory())
+                .setNegativeButton(negativeText, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void clearAllHistory() {
+        PreferencesHelper.clearTestHistory(getContext());
+        isResultSaved = false;
+
+        // اگر در حالت پایان تست هستیم، نتیجه فعلی را هم پاک کن
+        if (isFinished) {
+            isResultSaved = false;
+            showDiscardedResult(lastWpm);
+            btnDiscardResult.setVisibility(View.GONE);
+        }
+
+        renderChartAndHistory();
+
+        String message = currentLanguage.equals("fa") ?
+                "تمام تاریخچه حذف شد" :
+                "All history cleared";
+        showToast(message);
+    }
+
+    private void showToast(String message) {
+        android.widget.Toast.makeText(getContext(), message, android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private void resetTest() {
@@ -385,7 +446,6 @@ public class TestsFragment extends Fragment {
         showReadyMessage();
         updateLanguageInfo();
 
-        // به‌روزرسانی چارت و جدول
         renderChartAndHistory();
     }
 
@@ -420,8 +480,9 @@ public class TestsFragment extends Fragment {
 
         List<TestResultModel> history = PreferencesHelper.loadTestHistory(getContext());
 
-        // نمایش/مخفی کردن نمودار و جدول
+        // نمایش/مخفی کردن دکمه حذف تاریخچه
         if (history.isEmpty()) {
+            btnClearHistory.setVisibility(View.GONE);
             chartProgress.setVisibility(View.GONE);
             tvNoData.setVisibility(View.VISIBLE);
             rvHistory.setVisibility(View.GONE);
@@ -437,28 +498,24 @@ public class TestsFragment extends Fragment {
             return;
         }
 
+        btnClearHistory.setVisibility(View.VISIBLE);
+        updateClearHistoryButtonText();
         chartProgress.setVisibility(View.VISIBLE);
         tvNoData.setVisibility(View.GONE);
         rvHistory.setVisibility(View.VISIBLE);
         tvNoHistory.setVisibility(View.GONE);
 
-        // ========== رسم نمودار LineChart ==========
         setupLineChart(history);
 
-        // ========== نمایش جدول تاریخچه (آخرین 30 تست) ==========
         int startIndex = Math.max(0, history.size() - MAX_HISTORY_TABLE_ITEMS);
         List<TestResultModel> displayHistory = history.subList(startIndex, history.size());
         historyAdapter.updateData(displayHistory);
 
-        // به‌روزرسانی عنوان جدول
         updateHistoryTitle();
-
-        // به‌روزرسانی عنوان نمودار
         updateChartTitle();
     }
 
     private void setupLineChart(List<TestResultModel> history) {
-        // فقط آخرین MAX_CHART_ITEMS تست را در نمودار نمایش بده
         int startIndex = Math.max(0, history.size() - MAX_CHART_ITEMS);
         List<TestResultModel> chartHistory = history.subList(startIndex, history.size());
 
@@ -473,14 +530,12 @@ public class TestsFragment extends Fragment {
             }
         }
 
-        // اگر داده‌ای وجود نداشت، برگرد
         if (entries.isEmpty()) {
             chartProgress.setVisibility(View.GONE);
             tvNoData.setVisibility(View.VISIBLE);
             return;
         }
 
-        // تنظیم داده‌ها
         LineDataSet dataSet = new LineDataSet(entries, currentLanguage.equals("fa") ? "WPM" : "WPM");
         dataSet.setColor(Color.parseColor("#4A6CF7"));
         dataSet.setCircleColor(Color.parseColor("#4A6CF7"));
@@ -500,7 +555,6 @@ public class TestsFragment extends Fragment {
         LineData lineData = new LineData(dataSets);
         chartProgress.setData(lineData);
 
-        // تنظیم محور X
         XAxis xAxis = chartProgress.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setTextColor(Color.parseColor("#6B7A8F"));
@@ -514,7 +568,6 @@ public class TestsFragment extends Fragment {
             }
         });
 
-        // تنظیم محور Y
         YAxis yAxisLeft = chartProgress.getAxisLeft();
         yAxisLeft.setTextColor(Color.parseColor("#6B7A8F"));
         yAxisLeft.setTextSize(10f);
@@ -528,7 +581,6 @@ public class TestsFragment extends Fragment {
         YAxis yAxisRight = chartProgress.getAxisRight();
         yAxisRight.setEnabled(false);
 
-        // تنظیمات کلی نمودار
         chartProgress.getDescription().setEnabled(false);
         chartProgress.setTouchEnabled(true);
         chartProgress.setDragEnabled(true);
