@@ -2,23 +2,30 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    android:background="@drawable/bg_video_item"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_video_item_dark"
     android:orientation="horizontal"
-    android:padding="14dp">
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:layoutDirection="ltr"
+    android:foreground="?android:attr/selectableItemBackground">
 
+    <!-- آیکون ویدیو با افکت گرادیانت -->
     <LinearLayout
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="@drawable/bg_video_thumb"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_video_thumb_gradient"
         android:gravity="center">
 
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/ic_film" />
+            android:src="@drawable/ic_video_file" />
     </LinearLayout>
 
+    <!-- اطلاعات ویدیو -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -32,18 +39,25 @@
             android:layout_height="wrap_content"
             android:textColor="#1A2639"
             android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/tvVideoFile"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#7B8AA0"
-            android:textSize="13sp" />
+
     </LinearLayout>
 
-    <ImageView
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_play" />
+    <!-- دکمه پخش -->
+    <LinearLayout
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_play_button"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_play_arrow"
+            android:tint="#4A6CF7" />
+    </LinearLayout>
+
 </LinearLayout>

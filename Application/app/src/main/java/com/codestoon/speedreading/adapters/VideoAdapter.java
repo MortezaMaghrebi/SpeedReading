@@ -39,7 +39,6 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         VideoModel video = videos.get(position);
         holder.tvName.setText(video.getName());
-        holder.tvFile.setText(video.getFileName());
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -50,16 +49,15 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return videos.size();
+        return videos != null ? videos.size() : 0;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvFile;
+        TextView tvName;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvVideoName);
-            tvFile = itemView.findViewById(R.id.tvVideoFile);
         }
     }
 }

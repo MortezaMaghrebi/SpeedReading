@@ -78,13 +78,22 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- لیست ویدیوها (مخفی در حالت عادی) -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvVideos"
+    <!-- لیست ویدیوها با پس‌زمینه تیره‌تر -->
+    <LinearLayout
+        android:id="@+id/layoutVideoContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:nestedScrollingEnabled="false"
-        android:visibility="gone" />
+        android:background="@drawable/bg_exercise_card"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvVideos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" />
+    </LinearLayout>
 
 </LinearLayout>

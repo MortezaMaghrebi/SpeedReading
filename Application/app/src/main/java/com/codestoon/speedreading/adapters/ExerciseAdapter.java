@@ -67,9 +67,9 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
                 }
             });
             holder.rvVideos.setAdapter(videoAdapter);
-            holder.rvVideos.setVisibility(expandedStates[position] ? View.VISIBLE : View.GONE);
+            holder.layoutVideoContainer.setVisibility(expandedStates[position] ? View.VISIBLE : View.GONE);
         } else {
-            holder.rvVideos.setVisibility(View.GONE);
+            holder.layoutVideoContainer.setVisibility(View.GONE);
         }
 
         // کلیک روی آیتم برای باز/بسته کردن
@@ -86,10 +86,9 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
             // نمایش/مخفی کردن لیست ویدیوها
             if (holder.rvVideos.getAdapter() != null && holder.rvVideos.getAdapter().getItemCount() > 0) {
-                holder.rvVideos.setVisibility(expandedStates[position] ? View.VISIBLE : View.GONE);
+                holder.layoutVideoContainer.setVisibility(expandedStates[position] ? View.VISIBLE : View.GONE);
             }
 
-            // اطلاع به کلیک‌کننده (اختیاری)
             if (listener != null) {
                 listener.onExerciseClick(exercise);
             }
@@ -100,6 +99,24 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
             holder.ivArrow.setImageResource(R.drawable.ic_arrow_up);
         } else {
             holder.ivArrow.setImageResource(R.drawable.ic_arrow_down);
+        }
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        ImageView ivIcon, ivArrow;
+        TextView tvTitle, tvDesc, tvBadge;
+        RecyclerView rvVideos;
+        LinearLayout layoutVideoContainer;
+
+        ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            ivIcon = itemView.findViewById(R.id.ivExerciseIcon);
+            tvTitle = itemView.findViewById(R.id.tvExerciseTitle);
+            tvDesc = itemView.findViewById(R.id.tvExerciseDesc);
+            tvBadge = itemView.findViewById(R.id.tvExerciseBadge);
+            ivArrow = itemView.findViewById(R.id.ivArrow);
+            rvVideos = itemView.findViewById(R.id.rvVideos);
+            layoutVideoContainer = itemView.findViewById(R.id.layoutVideoContainer);
         }
     }
 
@@ -125,19 +142,5 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         notifyDataSetChanged();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivIcon, ivArrow;
-        TextView tvTitle, tvDesc, tvBadge;
-        RecyclerView rvVideos;
 
-        ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            ivIcon = itemView.findViewById(R.id.ivExerciseIcon);
-            tvTitle = itemView.findViewById(R.id.tvExerciseTitle);
-            tvDesc = itemView.findViewById(R.id.tvExerciseDesc);
-            tvBadge = itemView.findViewById(R.id.tvExerciseBadge);
-            ivArrow = itemView.findViewById(R.id.ivArrow);
-            rvVideos = itemView.findViewById(R.id.rvVideos);
-        }
-    }
 }
