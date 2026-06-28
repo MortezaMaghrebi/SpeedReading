@@ -51,4 +51,13 @@ public class GamePreferencesHelper {
     public static void clearGameHistory(Context context, String gameId) {
         getPrefs(context).edit().remove(KEY_PREFIX + gameId).apply();
     }
+
+    // حذف همه تاریخچه‌های همه بازی‌ها
+    public static void clearAllGameHistory(Context context) {
+        SharedPreferences prefs = getPrefs(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        // با توجه به اینکه نمی‌دانیم چه کلیدهایی وجود دارند، همه را پاک می‌کنیم
+        editor.clear();
+        editor.apply();
+    }
 }

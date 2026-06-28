@@ -19,7 +19,6 @@
             android:padding="16dp"
             android:gravity="center_vertical">
 
-            <!-- دکمه برگشت (مخفی در حالت عادی) -->
             <Button
                 android:id="@+id/btnBackToMenu"
                 android:layout_width="wrap_content"
@@ -75,64 +74,12 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
 
-            <GridLayout
+            <LinearLayout
+                android:id="@+id/menuContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:columnCount="2">
+                android:orientation="vertical" />
 
-                <Button
-                    android:id="@+id/btnGameMaze"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="6dp"
-                    android:background="@drawable/bg_game_menu_button"
-                    android:padding="20dp"
-                    android:text="🧩 ماز"
-                    android:textColor="#1A2639"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btnGameNumbers"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="6dp"
-                    android:background="@drawable/bg_game_menu_button"
-                    android:padding="20dp"
-                    android:text="🔢 اعداد"
-                    android:textColor="#1A2639"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btnGameWordCount"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="6dp"
-                    android:background="@drawable/bg_game_menu_button"
-                    android:padding="20dp"
-                    android:text="📝 شمارش کلمه"
-                    android:textColor="#1A2639"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btnGameCommonImage"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="6dp"
-                    android:background="@drawable/bg_game_menu_button"
-                    android:padding="20dp"
-                    android:text="🖼️ عکس مشترک"
-                    android:textColor="#1A2639"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-            </GridLayout>
         </LinearLayout>
 
         <!-- بخش بازی -->
@@ -181,7 +128,6 @@
                 android:padding="12dp"
                 android:background="@drawable/bg_test_text" />
 
-            <!-- تصویر اصلی بازی -->
             <ImageView
                 android:id="@+id/ivGameDisplay"
                 android:layout_width="match_parent"
@@ -190,7 +136,6 @@
                 android:scaleType="fitCenter"
                 android:background="#FFFFFF" />
 
-            <!-- بخش نمایش جواب -->
             <LinearLayout
                 android:id="@+id/layoutAnswer"
                 android:layout_width="match_parent"
@@ -288,36 +233,19 @@
                     android:textStyle="bold"
                     android:visibility="gone" />
 
-
-
+                <Button
+                    android:id="@+id/btnBackToMenuBottom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:padding="12dp"
+                    android:text="🔙 برگشت به منوی بازی‌ها"
+                    android:textColor="#1A2639"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/btnShowAnswer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_secondary"
-                android:padding="10dp"
-                android:text="نمایش جواب"
-                android:textColor="#1A2639"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-
-            <!-- دکمه برگشت به منو (در پایین صفحه) -->
-            <Button
-                android:id="@+id/btnBackToMenuBottom"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_secondary"
-                android:padding="10dp"
-                android:text="🔙 برگشت به منوی بازی‌ها"
-                android:textColor="#1A2639"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
         </LinearLayout>
 
         <!-- بخش نتیجه -->

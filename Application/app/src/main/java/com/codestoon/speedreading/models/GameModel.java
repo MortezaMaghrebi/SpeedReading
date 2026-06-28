@@ -1,10 +1,14 @@
 package com.codestoon.speedreading.models;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class GameModel {
     private String id;
     private String name;
     private int level;
-    private double time; // زمان بر حسب ثانیه
+    private double time;
     private long timestamp;
     private String date;
 
@@ -14,8 +18,8 @@ public class GameModel {
         this.level = level;
         this.time = time;
         this.timestamp = System.currentTimeMillis();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy/MM/dd - HH:mm", java.util.Locale.getDefault());
-        this.date = sdf.format(new java.util.Date(timestamp));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault());
+        this.date = sdf.format(new Date(timestamp));
     }
 
     public String getId() { return id; }

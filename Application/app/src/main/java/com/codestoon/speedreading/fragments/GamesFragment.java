@@ -1,10 +1,6 @@
 package com.codestoon.speedreading.fragments;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -23,8 +19,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.codestoon.speedreading.R;
 import com.codestoon.speedreading.adapters.GameHistoryAdapter;
+import com.codestoon.speedreading.games.GameManager;
+import com.codestoon.speedreading.games.base.BaseGame;
 import com.codestoon.speedreading.models.GameModel;
-import com.codestoon.speedreading.utils.GamePreferencesHelper;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -34,13 +31,8 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 public class GamesFragment extends Fragment {
 
@@ -56,7 +48,8 @@ public class GamesFragment extends Fragment {
 
     // ====== متغیرهای بازی ======
     private String currentLanguage = "fa";
-    private String currentGame = "";
+    private BaseGame currentGame = null;
+    private String currentGameId = "";
     private int currentLevel = 1;
     private int maxLevel = 10;
     private boolean isGameRunning = false;
@@ -65,49 +58,16 @@ public class GamesFragment extends Fragment {
     private long startTime = 0;
     private double elapsedTime = 0;
 
-    // ====== متغیرهای بازی ماز ======
-    private String[] mazeLevels = {"level_1", "level_2", "level_3", "level_4"};
-
-    // ====== متغیرهای بازی اعداد ======
-    private int numberGridSize = 7;
-
-    // ====== متغیرهای بازی شمارش کلمه ======
-    private String targetWord = "";
-    private String fullText = "";
-    private int targetCount = 0;
-
-    // ====== متغیرهای بازی عکس مشترک ======
-    private int commonImageIndex = 0;
-    private int[] imageSet1 = new int[9];
-    private int[] imageSet2 = new int[9];
-
     private boolean isViewReady = false;
-
-    // ====== لیست آیکون‌ها برای بازی عکس ======
-    private int[] imageIcons = {
-            R.drawable.ic_star,
-            R.drawable.ic_heart,
-            R.drawable.ic_circle,
-            R.drawable.ic_square,
-            R.drawable.ic_triangle,
-            R.drawable.ic_diamond,
-            R.drawable.ic_bolt,
-            R.drawable.ic_cloud,
-            R.drawable.ic_moon,
-            R.drawable.ic_sun,
-            R.drawable.ic_leaf,
-            R.drawable.ic_drop,
-            R.drawable.ic_fire,
-            R.drawable.ic_snow,
-            R.drawable.ic_rainbow,
-            R.drawable.ic_star_filled
-    };
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_games, container, false);
+
+        // مقداردهی اولیه GameManager
+        GameManager.getInstance().init(getContext());
 
         initViews(view);
         setupHistoryRecycler();
@@ -148,11 +108,66 @@ public class GamesFragment extends Fragment {
         chartProgress = view.findViewById(R.id.chartProgress);
         rvHistory = view.findViewById(R.id.rvHistory);
 
-        // دکمه‌های منو
-        view.findViewById(R.id.btnGameMaze).setOnClickListener(v -> selectGame("maze"));
-        view.findViewById(R.id.btnGameNumbers).setOnClickListener(v -> selectGame("numbers"));
-        view.findViewById(R.id.btnGameWordCount).setOnClickListener(v -> selectGame("word_count"));
-        view.findViewById(R.id.btnGameCommonImage).setOnClickListener(v -> selectGame("common_image"));
+        // ایجاد دکمه‌های منو به صورت داینامیک
+        setupGameMenu(view);
+    }
+
+    private void setupGameMenu(View view) {
+        LinearLayout menuContainer = view.findViewById(R.id.menuContainer);
+        menuContainer.removeAllViews();
+
+        // دریافت لیست بازی‌ها از GameManager
+        List<BaseGame> games = GameManager.getInstance().getAllGames();
+
+        // ایجاد GridLayout برای دکمه‌ها
+        android.widget.GridLayout gridLayout = new android.widget.GridLayout(getContext());
+        gridLayout.setColumnCount(2);
+        gridLayout.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        for (BaseGame game : games) {
+            Button gameButton = new Button(getContext());
+            String buttonText = currentLanguage.equals("en") ? game.getGameName() : game.getGameName();
+            // برای بازی ماز، name رو از کلاس می‌گیریم
+            gameButton.setText(buttonText);
+            gameButton.setPadding(20, 20, 20, 20);
+            gameButton.setBackgroundResource(R.drawable.bg_game_menu_button);
+            gameButton.setTextColor(getResources().getColor(R.color.text_primary));
+            gameButton.setTextSize(16);
+            gameButton.setTypeface(null, android.graphics.Typeface.BOLD);
+
+            // تنظیم آیکون بر اساس نوع بازی
+            String icon = getGameIcon(game.getGameId());
+            gameButton.setText(icon + " " + buttonText);
+
+            gameButton.setOnClickListener(v -> {
+                selectGame(game.getGameId());
+            });
+
+            // تنظیم LayoutParams برای GridLayout
+            android.widget.GridLayout.LayoutParams params = new android.widget.GridLayout.LayoutParams();
+            params.width = 0;
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            params.columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f);
+            params.setMargins(12, 12, 12, 12);
+            gameButton.setLayoutParams(params);
+
+            gridLayout.addView(gameButton);
+        }
+
+        menuContainer.addView(gridLayout);
+    }
+
+    private String getGameIcon(String gameId) {
+        switch (gameId) {
+            case "maze": return "🧩";
+            case "numbers": return "🔢";
+            case "word_count": return "📝";
+            case "common_image": return "🖼️";
+            default: return "🎮";
+        }
     }
 
     private void setupHistoryRecycler() {
@@ -175,14 +190,17 @@ public class GamesFragment extends Fragment {
         btnBackToMenuBottom.setVisibility(View.GONE);
     }
 
-    private void selectGame(String game) {
-        currentGame = game;
+    private void selectGame(String gameId) {
+        currentGameId = gameId;
+        currentGame = GameManager.getInstance().getGame(gameId);
         currentLevel = 1;
         resetGame();
         showGameInfo();
     }
 
     private void showGameInfo() {
+        if (currentGame == null) return;
+
         layoutGameMenu.setVisibility(View.GONE);
         layoutGamePlay.setVisibility(View.VISIBLE);
         layoutResult.setVisibility(View.GONE);
@@ -198,35 +216,15 @@ public class GamesFragment extends Fragment {
         ivGameDisplay.setImageBitmap(null);
         ivGameAnswer.setImageBitmap(null);
 
-        String gameName = getGameName(currentGame);
+        String gameName = currentLanguage.equals("en") ? currentGame.getGameName() : currentGame.getGameName();
         tvGameTitle.setText(gameName);
-        tvLevel.setText(getLevelText() + " " + currentLevel + "/" + maxLevel);
+        tvLevel.setText(getLevelText() + " " + currentLevel + "/" + currentGame.getMaxLevel());
         tvTimer.setText("⏱ 00:00");
         tvBestTime.setText(getBestTimeText() + ": " + getBestTime());
-        tvInstruction.setText(getGameInstruction(currentGame));
+        tvInstruction.setText(currentGame.getInstruction(currentLevel, currentLanguage));
         tvResult.setText("");
         tvResultDetail.setText("");
         setupChartAndHistory();
-    }
-
-    private String getGameName(String game) {
-        if (currentLanguage.equals("en")) {
-            switch (game) {
-                case "maze": return "Maze";
-                case "numbers": return "Number Hunt";
-                case "word_count": return "Word Counter";
-                case "common_image": return "Find Common Image";
-                default: return "Game";
-            }
-        } else {
-            switch (game) {
-                case "maze": return "ماز";
-                case "numbers": return "پیدا کردن اعداد";
-                case "word_count": return "شمارش کلمه";
-                case "common_image": return "پیدا کردن عکس مشترک";
-                default: return "بازی";
-            }
-        }
     }
 
     private String getLevelText() {
@@ -237,28 +235,10 @@ public class GamesFragment extends Fragment {
         return currentLanguage.equals("en") ? "Best Time" : "بهترین زمان";
     }
 
-    private String getGameInstruction(String game) {
-        if (currentLanguage.equals("en")) {
-            switch (game) {
-                case "maze": return "Look at the maze, find the path in your mind, then press Finish";
-                case "numbers": return "Find numbers 1 to 49 in order in your mind, then press Finish";
-                case "word_count": return "Count how many times the target word appears, then press Finish";
-                case "common_image": return "Find the image that appears in both sets, then press Finish";
-                default: return "";
-            }
-        } else {
-            switch (game) {
-                case "maze": return "به ماز نگاه کن، مسیر را در ذهن پیدا کن، سپس دکمه پایان را بزن";
-                case "numbers": return "اعداد ۱ تا ۴۹ را به ترتیب در ذهن پیدا کن، سپس دکمه پایان را بزن";
-                case "word_count": return "تعداد تکرار کلمه هدف را پیدا کن، سپس دکمه پایان را بزن";
-                case "common_image": return "عکسی که در هر دو مجموعه وجود دارد را پیدا کن، سپس دکمه پایان را بزن";
-                default: return "";
-            }
-        }
-    }
-
     private String getBestTime() {
-        List<GameModel> history = GamePreferencesHelper.loadGameHistory(getContext(), currentGame);
+        if (currentGame == null) return currentLanguage.equals("en") ? "Not played yet" : "هنوز بازی نشده";
+
+        List<GameModel> history = currentGame.loadHistory(getContext());
         if (history.isEmpty()) return currentLanguage.equals("en") ? "Not played yet" : "هنوز بازی نشده";
 
         double best = Double.MAX_VALUE;
@@ -272,6 +252,8 @@ public class GamesFragment extends Fragment {
     }
 
     private void startGame() {
+        if (currentGame == null) return;
+
         isGameRunning = true;
         isGameFinished = false;
         startTime = System.currentTimeMillis();
@@ -285,12 +267,7 @@ public class GamesFragment extends Fragment {
         elapsedTime = 0;
         updateTimer();
 
-        switch (currentGame) {
-            case "maze": startMazeGame(); break;
-            case "numbers": startNumbersGame(); break;
-            case "word_count": startWordCountGame(); break;
-            case "common_image": startCommonImageGame(); break;
-        }
+        currentGame.startGame(currentLevel, ivGameDisplay, tvInstruction);
     }
 
     private void backToMenu() {
@@ -299,309 +276,14 @@ public class GamesFragment extends Fragment {
         resetGame();
         showGameMenu();
         btnBackToMenu.setVisibility(View.GONE);
+
+        // بازسازی منو برای به‌روزرسانی زبان
+        setupGameMenu(getView());
     }
 
-    // ============================================================
-    // ========== بازی ۱: ماز (Maze) ==========
-    // ============================================================
-    private void startMazeGame() {
-        try {
-            int levelIndex = Math.min((currentLevel - 1) / 3, 3);
-            String levelFolder = mazeLevels[levelIndex];
-
-            Random rand = new Random();
-            int gameIndex = rand.nextInt(3) + 1;
-
-            String questionPath = "games/maze/" + levelFolder + "/question/game" + gameIndex + ".jpg";
-            InputStream questionStream = getContext().getAssets().open(questionPath);
-            Bitmap questionBitmap = BitmapFactory.decodeStream(questionStream);
-            questionStream.close();
-            ivGameDisplay.setImageBitmap(questionBitmap);
-
-            String answerPath = "games/maze/" + levelFolder + "/answer/game" + gameIndex + ".jpg";
-            InputStream answerStream = getContext().getAssets().open(answerPath);
-            Bitmap answerBitmap = BitmapFactory.decodeStream(answerStream);
-            answerStream.close();
-            ivGameAnswer.setImageBitmap(answerBitmap);
-
-            tvInstruction.setText(currentLanguage.equals("en") ?
-                    "Find the path from start (S) to finish (F) in your mind" :
-                    "مسیر را از شروع (S) تا پایان (F) در ذهن پیدا کن");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            tvResult.setText("Error loading maze image");
-        }
-    }
-
-    // ============================================================
-    // ========== بازی ۲: اعداد (Number Hunt) ==========
-    // ============================================================
-    private void startNumbersGame() {
-        numberGridSize = 7;
-        Bitmap numberBitmap = createNumberGridBitmap(numberGridSize);
-        ivGameDisplay.setImageBitmap(numberBitmap);
-        ivGameAnswer.setImageBitmap(null);
-
-        tvInstruction.setText(currentLanguage.equals("en") ?
-                "Find numbers 1 to 49 in order in your mind" :
-                "اعداد ۱ تا ۴۹ را به ترتیب در ذهن پیدا کن");
-    }
-
-    private Bitmap createNumberGridBitmap(int size) {
-        int totalNumbers = size * size;
-        int cellSize = 60;
-        int padding = 10;
-        int width = size * cellSize + padding * 2;
-        int height = size * cellSize + padding * 2;
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.WHITE);
-
-        List<Integer> numbers = new ArrayList<>();
-        for (int i = 1; i <= totalNumbers; i++) {
-            numbers.add(i);
-        }
-        java.util.Collections.shuffle(numbers);
-
-        Paint paint = new Paint();
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(24);
-        paint.setTextAlign(Paint.Align.CENTER);
-
-        Paint borderPaint = new Paint();
-        borderPaint.setColor(Color.GRAY);
-        borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(1);
-
-        int index = 0;
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                int x = padding + col * cellSize + cellSize / 2;
-                int y = padding + row * cellSize + cellSize / 2;
-                int number = numbers.get(index++);
-
-                int left = padding + col * cellSize;
-                int top = padding + row * cellSize;
-                int right = left + cellSize;
-                int bottom = top + cellSize;
-                canvas.drawRect(left, top, right, bottom, borderPaint);
-                canvas.drawText(String.valueOf(number), x, y + 8, paint);
-            }
-        }
-
-        return bitmap;
-    }
-
-    // ============================================================
-    // ========== بازی ۳: شمارش کلمه (Word Counter) ==========
-    // ============================================================
-    private void startWordCountGame() {
-        String[] words = {
-                "کتاب", "خواندن", "تندخوانی", "تمرین", "مطالعه", "یادگیری",
-                "سرعت", "درک", "مطلب", "چشم", "حرکت", "تمرکز"
-        };
-
-        Random rand = new Random();
-        targetWord = words[rand.nextInt(words.length)];
-        targetCount = 0;
-
-        StringBuilder textBuilder = new StringBuilder();
-        for (int i = 0; i < 80 + currentLevel * 10; i++) {
-            String word = words[rand.nextInt(words.length)];
-            textBuilder.append(word).append(" ");
-            if (word.equals(targetWord)) {
-                targetCount++;
-            }
-        }
-        int extraRepeats = 3 + currentLevel * 2;
-        for (int i = 0; i < extraRepeats; i++) {
-            textBuilder.append(targetWord).append(" ");
-            targetCount++;
-        }
-        fullText = textBuilder.toString();
-
-        Bitmap textBitmap = createTextBitmap(fullText);
-        ivGameDisplay.setImageBitmap(textBitmap);
-        ivGameAnswer.setImageBitmap(null);
-
-        tvInstruction.setText(currentLanguage.equals("en") ?
-                "Count how many times '" + targetWord + "' appears in the text" :
-                "تعداد تکرار کلمه '" + targetWord + "' را در متن پیدا کن");
-    }
-
-    private Bitmap createTextBitmap(String text) {
-        int width = 800;
-        int height = 500;
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.WHITE);
-
-        Paint paint = new Paint();
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(18);
-        paint.setAntiAlias(true);
-
-        String[] lines = text.split(" ");
-        StringBuilder currentLine = new StringBuilder();
-        int y = 50;
-        int maxWidth = width - 40;
-
-        for (String word : lines) {
-            String testLine = currentLine.toString() + word + " ";
-            float textWidth = paint.measureText(testLine);
-            if (textWidth > maxWidth) {
-                canvas.drawText(currentLine.toString(), 20, y, paint);
-                currentLine = new StringBuilder(word + " ");
-                y += 30;
-            } else {
-                currentLine.append(word).append(" ");
-            }
-        }
-        if (currentLine.length() > 0) {
-            canvas.drawText(currentLine.toString(), 20, y, paint);
-        }
-
-        return bitmap;
-    }
-
-    // ============================================================
-    // ========== بازی ۴: پیدا کردن عکس مشترک (Common Image) ==========
-    // ============================================================
-    private void startCommonImageGame() {
-        Random rand = new Random();
-        commonImageIndex = rand.nextInt(imageIcons.length);
-
-        Bitmap combinedBitmap = createCommonImageBitmap();
-        ivGameDisplay.setImageBitmap(combinedBitmap);
-        ivGameAnswer.setImageBitmap(null);
-
-        tvInstruction.setText(currentLanguage.equals("en") ?
-                "Find the image that appears in both sets (top and bottom)" :
-                "عکسی که در هر دو مجموعه (بالا و پایین) وجود دارد را پیدا کن");
-    }
-
-    private Bitmap createCommonImageBitmap() {
-        Random rand = new Random();
-
-        // ساخت مجموعه اول
-        Set<Integer> usedImages = new HashSet<>();
-        usedImages.add(commonImageIndex);
-        imageSet1[0] = commonImageIndex;
-        for (int i = 1; i < 9; i++) {
-            int img;
-            do {
-                img = rand.nextInt(imageIcons.length);
-            } while (usedImages.contains(img));
-            usedImages.add(img);
-            imageSet1[i] = img;
-        }
-        shuffleArray(imageSet1);
-
-        // ساخت مجموعه دوم
-        usedImages.clear();
-        usedImages.add(commonImageIndex);
-        imageSet2[0] = commonImageIndex;
-        for (int i = 1; i < 9; i++) {
-            int img;
-            do {
-                img = rand.nextInt(imageIcons.length);
-            } while (usedImages.contains(img));
-            usedImages.add(img);
-            imageSet2[i] = img;
-        }
-        shuffleArray(imageSet2);
-
-        // ایجاد تصویر ترکیبی
-        int cellSize = 80;
-        int padding = 10;
-        int cols = 3;
-        int rows = 3;
-        int width = cols * cellSize + padding * 2;
-        int height = rows * cellSize + padding * 2;
-
-        Bitmap topBitmap = createSingleImageSet(imageSet1);
-        Bitmap bottomBitmap = createSingleImageSet(imageSet2);
-
-        int combinedWidth = Math.max(topBitmap.getWidth(), bottomBitmap.getWidth());
-        int combinedHeight = topBitmap.getHeight() + bottomBitmap.getHeight() + 40;
-
-        Bitmap combined = Bitmap.createBitmap(combinedWidth, combinedHeight, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(combined);
-        canvas.drawColor(Color.WHITE);
-
-        Paint textPaint = new Paint();
-        textPaint.setColor(Color.BLACK);
-        textPaint.setTextSize(20);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-
-        String label1 = currentLanguage.equals("en") ? "Set 1" : "مجموعه ۱";
-        String label2 = currentLanguage.equals("en") ? "Set 2" : "مجموعه ۲";
-        canvas.drawText(label1, combinedWidth / 2, 30, textPaint);
-
-        canvas.drawBitmap(topBitmap, (combinedWidth - topBitmap.getWidth()) / 2, 40, null);
-
-        Paint linePaint = new Paint();
-        linePaint.setColor(Color.BLACK);
-        linePaint.setStrokeWidth(2);
-        canvas.drawLine(0, topBitmap.getHeight() + 50, combinedWidth, topBitmap.getHeight() + 50, linePaint);
-
-        canvas.drawText(label2, combinedWidth / 2, topBitmap.getHeight() + 70, textPaint);
-        canvas.drawBitmap(bottomBitmap, (combinedWidth - bottomBitmap.getWidth()) / 2, topBitmap.getHeight() + 80, null);
-
-        return combined;
-    }
-
-    private Bitmap createSingleImageSet(int[] imageSet) {
-        int cellSize = 80;
-        int padding = 10;
-        int cols = 3;
-        int rows = 3;
-        int width = cols * cellSize + padding * 2;
-        int height = rows * cellSize + padding * 2;
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.WHITE);
-
-        Paint bgPaint = new Paint();
-        bgPaint.setColor(Color.LTGRAY);
-
-        for (int i = 0; i < 9; i++) {
-            int row = i / cols;
-            int col = i % cols;
-            int x = padding + col * cellSize;
-            int y = padding + row * cellSize;
-
-            canvas.drawRect(x, y, x + cellSize, y + cellSize, bgPaint);
-
-            Bitmap iconBitmap = BitmapFactory.decodeResource(getResources(), imageIcons[imageSet[i]]);
-            if (iconBitmap != null) {
-                Bitmap scaledIcon = Bitmap.createScaledBitmap(iconBitmap, cellSize - 10, cellSize - 10, true);
-                canvas.drawBitmap(scaledIcon, x + 5, y + 5, null);
-            }
-        }
-
-        return bitmap;
-    }
-
-    private void shuffleArray(int[] array) {
-        Random rand = new Random();
-        for (int i = array.length - 1; i > 0; i--) {
-            int j = rand.nextInt(i + 1);
-            int temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
-        }
-    }
-
-    // ============================================================
-    // ========== متدهای عمومی بازی ==========
-    // ============================================================
     private void finishGame() {
-        if (!isGameRunning) return;
+        if (!isGameRunning || currentGame == null) return;
+
         isGameRunning = false;
         isGameFinished = true;
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;
@@ -616,10 +298,11 @@ public class GamesFragment extends Fragment {
 
         // نمایش جواب
         layoutAnswer.setVisibility(View.VISIBLE);
+        currentGame.showAnswer(ivGameAnswer);
 
         // ذخیره نتیجه
-        GameModel result = new GameModel(currentGame, getGameName(currentGame), currentLevel, elapsedTime);
-        GamePreferencesHelper.addGameResult(getContext(), result);
+        GameModel result = currentGame.createGameResult(currentLevel, elapsedTime);
+        currentGame.saveResult(getContext(), result);
 
         // نمایش نتیجه
         layoutResult.setVisibility(View.VISIBLE);
@@ -635,7 +318,9 @@ public class GamesFragment extends Fragment {
     }
 
     private void nextLevel() {
-        if (currentLevel < maxLevel) {
+        if (currentGame == null) return;
+
+        if (currentLevel < currentGame.getMaxLevel()) {
             currentLevel++;
             resetGame();
             showGameInfo();
@@ -665,7 +350,9 @@ public class GamesFragment extends Fragment {
         layoutAnswer.setVisibility(View.GONE);
         layoutResult.setVisibility(View.GONE);
         btnStartGame.setText(currentLanguage.equals("en") ? "Start Game" : "شروع بازی");
-        tvInstruction.setText(getGameInstruction(currentGame));
+        if (currentGame != null) {
+            tvInstruction.setText(currentGame.getInstruction(currentLevel, currentLanguage));
+        }
     }
 
     private void updateTimer() {
@@ -680,13 +367,10 @@ public class GamesFragment extends Fragment {
         tvBestTime.setText(getBestTimeText() + ": " + getBestTime());
     }
 
-    // ============================================================
-    // ========== چارت و تاریخچه ==========
-    // ============================================================
     private void setupChartAndHistory() {
-        if (getContext() == null || currentGame.isEmpty()) return;
+        if (getContext() == null || currentGame == null) return;
 
-        List<GameModel> history = GamePreferencesHelper.loadGameHistory(getContext(), currentGame);
+        List<GameModel> history = currentGame.loadHistory(getContext());
 
         if (history.isEmpty()) {
             chartProgress.setVisibility(View.GONE);
@@ -775,10 +459,16 @@ public class GamesFragment extends Fragment {
         if (!isViewReady) return;
         this.currentLanguage = language;
 
-        if (!currentGame.isEmpty()) {
-            tvGameTitle.setText(getGameName(currentGame));
-            tvInstruction.setText(getGameInstruction(currentGame));
-            tvLevel.setText(getLevelText() + " " + currentLevel + "/" + maxLevel);
+        // بازسازی منو
+        if (getView() != null) {
+            setupGameMenu(getView());
+        }
+
+        if (currentGame != null) {
+            String gameName = currentLanguage.equals("en") ? currentGame.getGameName() : currentGame.getGameName();
+            tvGameTitle.setText(gameName);
+            tvInstruction.setText(currentGame.getInstruction(currentLevel, currentLanguage));
+            tvLevel.setText(getLevelText() + " " + currentLevel + "/" + currentGame.getMaxLevel());
             tvBestTime.setText(getBestTimeText() + ": " + getBestTime());
             btnStartGame.setText(currentLanguage.equals("en") ? "Start Game" : "شروع بازی");
             btnBackToMenu.setText("←");
@@ -805,7 +495,7 @@ public class GamesFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (isViewReady && !currentGame.isEmpty()) {
+        if (isViewReady && currentGame != null) {
             setupChartAndHistory();
         }
     }
