@@ -57,7 +57,6 @@ public class GameManager {
         return result;
     }
 
-    // برای اضافه کردن بازی جدید در آینده
     public void addGame(BaseGame game) {
         registerGame(game);
     }

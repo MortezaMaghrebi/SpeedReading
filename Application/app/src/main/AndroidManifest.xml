@@ -13,8 +13,21 @@
         android:theme="@style/Theme.SpeedReading"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-
-        <!-- Main Activity -->
+        <activity
+            android:name=".activities.CommonImageGameActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.WordCountGameActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.NumbersGameActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.MazeGameActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.GameActivity"
+            android:exported="false" /> <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -22,17 +35,15 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Video Fullscreen Activity -->
+        </activity> <!-- Video Fullscreen Activity -->
         <activity
             android:name=".views.VideoFullscreenActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
-
     </application>
 
 </manifest>
