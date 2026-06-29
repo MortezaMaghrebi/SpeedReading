@@ -1,224 +1,295 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7FA"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:scrollbars="vertical">
 
-    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_chart_container"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="4dp"
-            android:src="@drawable/ic_arrow_right" />
-
-        <TextView
-            android:id="@+id/tvGameTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="12dp"
-            android:text="ماز"
-            android:textColor="#1A2639"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvDifficulty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_difficulty_badge"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:text="آسان"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvTimer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="⏱ 00:00"
-            android:textColor="#4A6CF7"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- محتوای بازی -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_chart_container"
+        android:background="#F5F7FA"
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvInstruction"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="مسیر را پیدا کن..."
-            android:textColor="#6B7A8F"
-            android:textSize="15sp"
-            android:gravity="center"
-            android:padding="8dp"
-            android:background="@drawable/bg_test_text" />
-
-        <ImageView
-            android:id="@+id/ivQuestion"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginTop="8dp"
-            android:scaleType="fitCenter"
-            android:background="#FFFFFF" />
-
-        <!-- جواب -->
+        <!-- Header -->
         <LinearLayout
-            android:id="@+id/layoutAnswer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_marginTop="8dp">
+            android:background="@drawable/bg_chart_container"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
 
-            <View
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="4dp"
+                android:src="@drawable/ic_arrow_right" />
+
+            <TextView
+                android:id="@+id/tvGameTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="ماز"
+                android:textColor="#1A2639"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDifficulty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_difficulty_badge"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="آسان"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="⏱ 00:00"
+                android:textColor="#4A6CF7"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- محتوای بازی -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_chart_container"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvInstruction"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#EEF3FC" />
+                android:layout_height="wrap_content"
+                android:text="مسیر را پیدا کن..."
+                android:textColor="#6B7A8F"
+                android:textSize="15sp"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="@drawable/bg_test_text" />
+
+            <!-- تصویر ماز -->
+            <ImageView
+                android:id="@+id/ivMaze"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:layout_marginTop="8dp"
+                android:scaleType="fitCenter"
+                android:background="#FFFFFF"
+                android:src="@drawable/ic_video_placeholder" />
+
+            <TextView
+                android:id="@+id/tvResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="#27AE60"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+            <!-- دکمه‌ها -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/btnStart"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_primary"
+                    android:padding="12dp"
+                    android:layout_marginTop="8dp"                    android:text="شروع"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnFinish"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_button_success"
+                    android:padding="12dp"
+                    android:text="پایان"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnRetry"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:padding="12dp"
+                    android:text="تست مجدد"
+                    android:textColor="#1A2639"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- نتیجه -->
+        <LinearLayout
+            android:id="@+id/layoutResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_chart_container"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="📌 جواب"
+                android:text="📊 نتیجه"
                 android:textColor="#1A2639"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
-            <ImageView
-                android:id="@+id/ivAnswer"
+            <TextView
+                android:id="@+id/tvResultDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="زمان: 0.00 ثانیه"
+                android:textColor="#1A2639"
+                android:textSize="18sp"
+                android:gravity="center"
+                android:padding="16dp"
+                android:background="@drawable/bg_test_text" />
+        </LinearLayout>
+
+        <!-- چارت و تاریخچه -->
+        <LinearLayout
+            android:id="@+id/layoutChart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_chart_container"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_chart" />
+
+                <TextView
+                    android:id="@+id/tvChartTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="پیشرفت ماز"
+                    android:textColor="#6B7A8F"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chartProgress"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:layout_marginTop="4dp"
-                android:scaleType="fitCenter"
-                android:background="#FFFFFF" />
-        </LinearLayout>
+                android:layout_marginTop="12dp" />
 
-        <TextView
-            android:id="@+id/tvResult"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="#27AE60"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:gravity="center" />
-
-        <!-- دکمه‌ها -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical">
-
-            <Button
-                android:id="@+id/btnStart"
+            <TextView
+                android:id="@+id/tvNoData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_button_primary"
-                android:padding="12dp"
-                android:text="شروع"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:gravity="center"
+                android:padding="20dp"
+                android:text="داده‌ای وجود ندارد"
+                android:textColor="#B0BED0"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="📋 تاریخچه"
+                android:textColor="#1A2639"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btnFinish"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_success"
-                android:padding="12dp"
-                android:text="پایان"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btnNextLevel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_primary"
-                android:padding="12dp"
-                android:text="سطح بعدی"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                <TextView
+                    android:id="@+id/tvHistoryTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="تاریخچه ماز"
+                    android:textColor="#6B7A8F"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btnReset"
+                <Button
+                    android:id="@+id/btnClearHistory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_danger"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="🗑️"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHistory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_secondary"
-                android:padding="12dp"
-                android:text="🔄 شروع مجدد"
-                android:textColor="#1A2639"
-                android:textSize="16sp"
-                android:textStyle="bold"
+                android:nestedScrollingEnabled="false" />
+
+            <TextView
+                android:id="@+id/tvNoHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="20dp"
+                android:text="تاریخچه‌ای وجود ندارد"
+                android:textColor="#B0BED0"
+                android:textSize="14sp"
                 android:visibility="gone" />
         </LinearLayout>
+
     </LinearLayout>
-
-    <!-- نتیجه -->
-    <LinearLayout
-        android:id="@+id/layoutResult"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_chart_container"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📊 نتیجه"
-            android:textColor="#1A2639"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/tvResultDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="زمان: 0.00 ثانیه"
-            android:textColor="#1A2639"
-            android:textSize="18sp"
-            android:gravity="center"
-            android:padding="16dp"
-            android:background="@drawable/bg_test_text" />
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>
