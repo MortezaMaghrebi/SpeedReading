@@ -119,9 +119,11 @@ public class GamesExpandableAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             diffHolder.ivDifficultyIcon.setImageResource(iconRes);
 
             diffHolder.itemView.setOnClickListener(v -> {
-                // باز کردن اکتیویتی بازی با سطح سختی
+                // باز کردن اکتیویتی بازی با سطح سختی و زبان
                 Intent intent = getGameIntent(game.getId(), difficulty, diffName, game);
                 if (intent != null) {
+                    // ارسال زبان به اکتیویتی
+                    intent.putExtra("language", currentLanguage);
                     context.startActivity(intent);
                 }
             });
@@ -153,6 +155,7 @@ public class GamesExpandableAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         intent.putExtra("difficulty_level", difficulty.getLevel());
         intent.putExtra("difficulty_name", diffName);
         intent.putExtra("game_title", gameTitle);
+        intent.putExtra("game_id", gameId);
 
         return intent;
     }

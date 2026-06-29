@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -48,6 +49,7 @@ public class MazeGameActivity extends AppCompatActivity {
     private String difficultyName;
     private int difficultyLevel;
     private String gameTitle;
+    private String gameId;
 
     private boolean isRunning = false;
     private boolean isFinished = false;
@@ -70,9 +72,12 @@ public class MazeGameActivity extends AppCompatActivity {
 
         initViews();
         getIntentData();
+        applyLanguage(); // ابتدا زبان را اعمال کن
         setupUI();
         loadDefaultMaze();
-        setupChartAndHistory();
+
+        // همیشه چارت و تاریخچه را نشان بده (حتی اگر خالی باشد)
+        showChartAndHistory();
 
         btnStart.setOnClickListener(v -> startGame());
         btnFinish.setOnClickListener(v -> finishGame());
@@ -103,6 +108,19 @@ public class MazeGameActivity extends AppCompatActivity {
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
         historyAdapter = new GameHistoryAdapter(new ArrayList<>());
         rvHistory.setAdapter(historyAdapter);
+
+        // تنظیم مربعی شدن ImageView
+        ivMaze.post(() -> {
+            int width = ivMaze.getWidth();
+            int height = ivMaze.getHeight();
+            if (width > 0 && height > 0) {
+                ViewGroup.LayoutParams params = ivMaze.getLayoutParams();
+                int min = Math.min(width, height);
+                params.height = min;
+                params.width = min;
+                ivMaze.setLayoutParams(params);
+            }
+        });
     }
 
     private void getIntentData() {
@@ -110,15 +128,22 @@ public class MazeGameActivity extends AppCompatActivity {
         difficultyLevel = getIntent().getIntExtra("difficulty_level", 1);
         difficultyName = getIntent().getStringExtra("difficulty_name");
         gameTitle = getIntent().getStringExtra("game_title");
+        gameId = getIntent().getStringExtra("game_id");
+
+        // دریافت زبان از Intent
+        String language = getIntent().getStringExtra("language");
+        if (language != null && !language.isEmpty()) {
+            currentLanguage = language;
+        }
     }
 
     private void setupUI() {
         tvGameTitle.setText(gameTitle);
         tvDifficulty.setText(difficultyName);
         tvTimer.setText("⏱ 00:00");
-        tvInstruction.setText(getInstructionText());
         tvResult.setText("");
         tvResultDetail.setText("");
+        tvInstruction.setText(getInstructionText());
 
         btnStart.setVisibility(View.VISIBLE);
         btnStart.setText(getStartText());
@@ -126,7 +151,20 @@ public class MazeGameActivity extends AppCompatActivity {
         btnRetry.setVisibility(View.GONE);
 
         layoutResult.setVisibility(View.GONE);
-        layoutChart.setVisibility(View.GONE);
+        // چارت را همیشه نشان بده
+        layoutChart.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * اعمال زبان و جهت Layout
+     */
+    private void applyLanguage() {
+        // تغییر جهت Layout
+        if (currentLanguage.equals("fa")) {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        } else {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        }
     }
 
     private String getInstructionText() {
@@ -149,15 +187,27 @@ public class MazeGameActivity extends AppCompatActivity {
         return currentLanguage.equals("en") ? "Retry" : "تست مجدد";
     }
 
-    private String getResetText() {
-        return currentLanguage.equals("en") ? "Reset" : "شروع مجدد";
-    }
-
     private String getResultText(double time) {
         if (currentLanguage.equals("en")) {
             return "✅ Time: " + String.format("%.2f", time) + " seconds";
         } else {
             return "✅ زمان: " + String.format("%.2f", time) + " ثانیه";
+        }
+    }
+
+    private String getNoDataText() {
+        if (currentLanguage.equals("en")) {
+            return "No data for this difficulty";
+        } else {
+            return "داده‌ای برای این سطح سختی وجود ندارد";
+        }
+    }
+
+    private String getNoHistoryText() {
+        if (currentLanguage.equals("en")) {
+            return "No history for this difficulty";
+        } else {
+            return "تاریخچه‌ای برای این سطح سختی وجود ندارد";
         }
     }
 
@@ -193,10 +243,12 @@ public class MazeGameActivity extends AppCompatActivity {
         btnFinish.setText(getFinishText());
         btnRetry.setVisibility(View.GONE);
         layoutResult.setVisibility(View.GONE);
-        layoutChart.setVisibility(View.GONE);
         tvResult.setText("");
         tvResultDetail.setText("");
         tvInstruction.setText(getInstructionText());
+
+        // چارت را مخفی نکن، فقط به‌روزرسانی کن
+        layoutChart.setVisibility(View.VISIBLE);
 
         updateTimer();
     }
@@ -219,8 +271,6 @@ public class MazeGameActivity extends AppCompatActivity {
         btnFinish.setVisibility(View.GONE);
         btnRetry.setVisibility(View.VISIBLE);
         btnRetry.setText(getRetryText());
-        //btnReset.setVisibility(View.VISIBLE);
-        //btnReset.setText(getResetText());
 
         // ذخیره نتیجه
         GameModel result = new GameModel("maze", gameTitle, difficultyLevel, elapsedTime);
@@ -231,7 +281,8 @@ public class MazeGameActivity extends AppCompatActivity {
         tvResultDetail.setText(getResultText(elapsedTime));
         tvResult.setText("");
 
-        setupChartAndHistory();
+        // به‌روزرسانی چارت و تاریخچه
+        showChartAndHistory();
         stopTimer();
     }
 
@@ -245,23 +296,20 @@ public class MazeGameActivity extends AppCompatActivity {
 
         btnRetry.setVisibility(View.GONE);
         layoutResult.setVisibility(View.GONE);
-        layoutChart.setVisibility(View.GONE);
         tvResult.setText("");
         tvResultDetail.setText("");
 
-        // تولید ماز جدید
-        //MazeGenerator.MazeResult result = MazeGenerator.generateMazeWithResult(difficultyLevel);
-        //currentQuestionBitmap = result.questionImage;
-        //currentAnswerBitmap = result.answerImage;
-        //ivMaze.setImageBitmap(currentQuestionBitmap);
         loadDefaultMaze();
 
         btnStart.setVisibility(View.VISIBLE);
         btnStart.setText(getStartText());
         tvInstruction.setText(getInstructionText());
         tvTimer.setText("⏱ 00:00");
-    }
 
+        // چارت را نشان بده
+        layoutChart.setVisibility(View.VISIBLE);
+        showChartAndHistory();
+    }
 
     private void updateTimer() {
         if (!isRunning) return;
@@ -289,9 +337,15 @@ public class MazeGameActivity extends AppCompatActivity {
     // ============================================================
     // ========== چارت و تاریخچه ==========
     // ============================================================
+    private void showChartAndHistory() {
+        layoutChart.setVisibility(View.VISIBLE);
+        setupChartAndHistory();
+    }
+
     private void setupChartAndHistory() {
         List<GameModel> history = GamePreferencesHelper.loadGameHistory(this, "maze");
 
+        // فیلتر بر اساس سطح سختی
         List<GameModel> filteredHistory = new ArrayList<>();
         for (GameModel game : history) {
             if (game.getLevel() == difficultyLevel) {
@@ -299,19 +353,20 @@ public class MazeGameActivity extends AppCompatActivity {
             }
         }
 
-        if (filteredHistory.isEmpty()) {
+        // حداکثر 30 مورد آخر را نمایش بده
+        int startIndex = Math.max(0, filteredHistory.size() - MAX_HISTORY_TABLE_ITEMS);
+        List<GameModel> displayHistory = filteredHistory.subList(startIndex, filteredHistory.size());
+
+        if (displayHistory.isEmpty()) {
             chartProgress.setVisibility(View.GONE);
             tvNoData.setVisibility(View.VISIBLE);
             rvHistory.setVisibility(View.GONE);
             tvNoHistory.setVisibility(View.VISIBLE);
 
-            if (currentLanguage.equals("en")) {
-                tvNoData.setText("No data for this difficulty");
-                tvNoHistory.setText("No history for this difficulty");
-            } else {
-                tvNoData.setText("داده‌ای برای این سطح سختی وجود ندارد");
-                tvNoHistory.setText("تاریخچه‌ای برای این سطح سختی وجود ندارد");
-            }
+            tvNoData.setText(getNoDataText());
+            tvNoHistory.setText(getNoHistoryText());
+
+            updateChartAndHistoryTitles();
             return;
         }
 
@@ -319,9 +374,6 @@ public class MazeGameActivity extends AppCompatActivity {
         tvNoData.setVisibility(View.GONE);
         rvHistory.setVisibility(View.VISIBLE);
         tvNoHistory.setVisibility(View.GONE);
-
-        int startIndex = Math.max(0, filteredHistory.size() - MAX_HISTORY_TABLE_ITEMS);
-        List<GameModel> displayHistory = filteredHistory.subList(startIndex, filteredHistory.size());
 
         setupLineChart(displayHistory);
         historyAdapter.updateData(displayHistory);
@@ -370,6 +422,7 @@ public class MazeGameActivity extends AppCompatActivity {
         xAxis.setTextSize(10f);
         xAxis.setDrawGridLines(false);
         xAxis.setGranularity(1f);
+        xAxis.setAxisMinimum(0);
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -399,16 +452,19 @@ public class MazeGameActivity extends AppCompatActivity {
     }
 
     private void updateChartAndHistoryTitles() {
-        String difficulty = currentLanguage.equals("en") ? difficultyName : difficultyName;
-        String level = currentLanguage.equals("en") ? "Level" : "سطح";
+        String levelText = currentLanguage.equals("en") ? "Level" : "سطح";
+        String chartTitle, historyTitle;
 
         if (currentLanguage.equals("en")) {
-            tvChartTitle.setText("Maze Progress - " + difficulty + " (" + level + " " + difficultyLevel + ")");
-            tvHistoryTitle.setText("Maze History - " + difficulty + " (" + level + " " + difficultyLevel + ")");
+            chartTitle = "Maze Solve Time - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+            historyTitle = "Maze History - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
         } else {
-            tvChartTitle.setText("پیشرفت ماز - " + difficulty + " (" + level + " " + difficultyLevel + ")");
-            tvHistoryTitle.setText("تاریخچه ماز - " + difficulty + " (" + level + " " + difficultyLevel + ")");
+            chartTitle = "زمان حل ماز - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+            historyTitle = "تاریخچه ماز - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
         }
+
+        tvChartTitle.setText(chartTitle);
+        tvHistoryTitle.setText(historyTitle);
     }
 
     @Override
@@ -426,8 +482,6 @@ public class MazeGameActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (isFinished) {
-            setupChartAndHistory();
-        }
+        showChartAndHistory();
     }
 }

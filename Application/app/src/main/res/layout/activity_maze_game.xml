@@ -89,7 +89,7 @@
                 android:id="@+id/ivMaze"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="10dp"
                 android:scaleType="fitCenter"
                 android:background="#FFFFFF"
                 android:src="@drawable/ic_video_placeholder" />
