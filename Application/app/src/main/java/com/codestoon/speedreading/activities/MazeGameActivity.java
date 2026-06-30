@@ -169,9 +169,9 @@ public class MazeGameActivity extends AppCompatActivity {
 
     private String getInstructionText() {
         if (currentLanguage.equals("en")) {
-            return "Find the path from start (S) to finish (F), then press Finish";
+            return "Find the path from the start (S) to the finish (F) with your eyes, then press the finish button";
         } else {
-            return "مسیر را از شروع (S) تا پایان (F) پیدا کن، سپس دکمه پایان را بزن";
+            return "مسیر را از شروع (S) تا پایان (F) با چشم پیدا کن، سپس دکمه پایان را بزن";
         }
     }
 
