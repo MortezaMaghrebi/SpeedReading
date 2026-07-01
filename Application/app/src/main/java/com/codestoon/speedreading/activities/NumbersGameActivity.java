@@ -1,5 +1,6 @@
 package com.codestoon.speedreading.activities;
 
+
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -204,12 +205,7 @@ public class NumbersGameActivity extends AppCompatActivity {
         }
     }
 
-    private void loadDefaultNumbers() {
-        if (defaultNumberBitmap == null || defaultNumberBitmap.isRecycled()) {
-            defaultNumberBitmap = NumberGenerator.generateDefaultNumberImage();
-        }
-        ivNumbers.setImageBitmap(defaultNumberBitmap);
-    }
+
 
     private void startGame() {
         if (isRunning) return;
@@ -285,6 +281,23 @@ public class NumbersGameActivity extends AppCompatActivity {
         showChartAndHistory();
     }
 
+    private void loadDefaultNumbers() {
+        if (defaultNumberBitmap == null || defaultNumberBitmap.isRecycled()) {
+            int total = getTotalNumbers(difficultyLevel);
+            defaultNumberBitmap = NumberGenerator.generateDefaultNumberImage(total);
+        }
+        ivNumbers.setImageBitmap(defaultNumberBitmap);
+    }
+
+    private int getTotalNumbers(int level) {
+        switch (level) {
+            case 1: return 16;  // آسان
+            case 2: return 25;  // متوسط
+            case 3: return 36;  // سخت
+            case 4: return 49;  // خیلی سخت
+            default: return 16;
+        }
+    }
     private void updateTimer() {
         if (!isRunning) return;
         long elapsed = System.currentTimeMillis() - startTime;
