@@ -1,40 +1,53 @@
 package com.codestoon.speedreading.activities;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.codestoon.speedreading.R;
+import com.codestoon.speedreading.adapters.GameHistoryAdapter;
 import com.codestoon.speedreading.models.GameModel;
 import com.codestoon.speedreading.utils.GamePreferencesHelper;
+import com.codestoon.speedreading.games.commonimage.CommonImageGenerator;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CommonImageGameActivity extends AppCompatActivity {
 
     private TextView tvGameTitle, tvDifficulty, tvTimer, tvInstruction, tvResult, tvResultDetail;
-    private TextView tvAnswerText;
-    private ImageView ivQuestion, ivAnswer;
-    private Button btnStart, btnFinish, btnNextLevel, btnReset;
-    private LinearLayout layoutAnswer, layoutResult;
+    private TextView tvChartTitle, tvHistoryTitle, tvNoData, tvNoHistory;
+    private ImageView ivImage;
+    private Button btnStart, btnFinish, btnRetry;
+    private LinearLayout layoutResult, layoutChart;
+    private LineChart chartProgress;
+    private RecyclerView rvHistory;
+    private GameHistoryAdapter historyAdapter;
 
+    private String currentLanguage = "fa";
     private String difficultyId;
     private String difficultyName;
     private int difficultyLevel;
     private String gameTitle;
+    private String gameId;
 
     private boolean isRunning = false;
     private boolean isFinished = false;
@@ -42,46 +55,30 @@ public class CommonImageGameActivity extends AppCompatActivity {
     private long startTime = 0;
     private double elapsedTime = 0;
 
-    private int currentLevel = 1;
-    private int maxLevel = 5;
-    private int commonImageIndex = 0;
-    private int[] imageSet1 = new int[9];
-    private int[] imageSet2 = new int[9];
-    private Bitmap combinedBitmap;
+    private Bitmap defaultBitmap;
+    private Bitmap currentQuestionBitmap;
+    private Bitmap currentAnswerBitmap;
 
-    private int[] imageIcons = {
-            R.drawable.ic_star,
-            R.drawable.ic_heart,
-            R.drawable.ic_circle,
-            R.drawable.ic_square,
-            R.drawable.ic_triangle,
-            R.drawable.ic_diamond,
-            R.drawable.ic_bolt,
-            R.drawable.ic_cloud,
-            R.drawable.ic_moon,
-            R.drawable.ic_sun,
-            R.drawable.ic_leaf,
-            R.drawable.ic_drop,
-            R.drawable.ic_fire,
-            R.drawable.ic_snow,
-            R.drawable.ic_rainbow,
-            R.drawable.ic_star_filled
-    };
+    private static final int MAX_HISTORY_TABLE_ITEMS = 30;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_common_image_game);
 
+        CommonImageGenerator.init(this);
+
         initViews();
         getIntentData();
+        applyLanguage();
         setupUI();
-        generateImages();
+        loadDefaultImage();
+
+        showChartAndHistory();
 
         btnStart.setOnClickListener(v -> startGame());
         btnFinish.setOnClickListener(v -> finishGame());
-        btnNextLevel.setOnClickListener(v -> nextLevel());
-        btnReset.setOnClickListener(v -> resetGame());
+        btnRetry.setOnClickListener(v -> retryGame());
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
@@ -92,15 +89,32 @@ public class CommonImageGameActivity extends AppCompatActivity {
         tvInstruction = findViewById(R.id.tvInstruction);
         tvResult = findViewById(R.id.tvResult);
         tvResultDetail = findViewById(R.id.tvResultDetail);
-        tvAnswerText = findViewById(R.id.tvAnswerText);
-        ivQuestion = findViewById(R.id.ivQuestion);
-        ivAnswer = findViewById(R.id.ivAnswer);
+        tvChartTitle = findViewById(R.id.tvChartTitle);
+        tvHistoryTitle = findViewById(R.id.tvHistoryTitle);
+        tvNoData = findViewById(R.id.tvNoData);
+        tvNoHistory = findViewById(R.id.tvNoHistory);
+        ivImage = findViewById(R.id.ivImage);
         btnStart = findViewById(R.id.btnStart);
         btnFinish = findViewById(R.id.btnFinish);
-        btnNextLevel = findViewById(R.id.btnNextLevel);
-        btnReset = findViewById(R.id.btnReset);
-        layoutAnswer = findViewById(R.id.layoutAnswer);
+        btnRetry = findViewById(R.id.btnRetry);
         layoutResult = findViewById(R.id.layoutResult);
+        layoutChart = findViewById(R.id.layoutChart);
+        chartProgress = findViewById(R.id.chartProgress);
+        rvHistory = findViewById(R.id.rvHistory);
+
+        rvHistory.setLayoutManager(new LinearLayoutManager(this));
+        historyAdapter = new GameHistoryAdapter(new ArrayList<>());
+        rvHistory.setAdapter(historyAdapter);
+
+
+        ivImage.post(() -> {
+            int width = ivImage.getWidth();
+            if (width > 0) {
+                ViewGroup.LayoutParams params = ivImage.getLayoutParams();
+                params.height = (int) (width * 1.5); // نسبت 1:1.7
+                ivImage.setLayoutParams(params);
+            }
+        });
     }
 
     private void getIntentData() {
@@ -108,206 +122,163 @@ public class CommonImageGameActivity extends AppCompatActivity {
         difficultyLevel = getIntent().getIntExtra("difficulty_level", 1);
         difficultyName = getIntent().getStringExtra("difficulty_name");
         gameTitle = getIntent().getStringExtra("game_title");
+        gameId = getIntent().getStringExtra("game_id");
+
+        String language = getIntent().getStringExtra("language");
+        if (language != null && !language.isEmpty()) {
+            currentLanguage = language;
+        }
     }
 
     private void setupUI() {
         tvGameTitle.setText(gameTitle);
         tvDifficulty.setText(difficultyName);
         tvTimer.setText("⏱ 00:00");
+        tvResult.setText("");
+        tvResultDetail.setText("");
+        tvInstruction.setText(getInstructionText());
+
         btnStart.setVisibility(View.VISIBLE);
+        btnStart.setText(getStartText());
         btnFinish.setVisibility(View.GONE);
-        btnNextLevel.setVisibility(View.GONE);
-        btnReset.setVisibility(View.GONE);
-        layoutAnswer.setVisibility(View.GONE);
+        btnRetry.setVisibility(View.GONE);
+
         layoutResult.setVisibility(View.GONE);
-        tvAnswerText.setVisibility(View.GONE);
-        tvInstruction.setText("عکسی که در هر دو مجموعه وجود دارد را پیدا کن");
+        layoutChart.setVisibility(View.VISIBLE);
     }
 
-    private void generateImages() {
-        Random rand = new Random();
-        commonImageIndex = rand.nextInt(imageIcons.length);
-
-        // ساخت مجموعه اول
-        Set<Integer> usedImages = new HashSet<>();
-        usedImages.add(commonImageIndex);
-        imageSet1[0] = commonImageIndex;
-        for (int i = 1; i < 9; i++) {
-            int img;
-            do {
-                img = rand.nextInt(imageIcons.length);
-            } while (usedImages.contains(img));
-            usedImages.add(img);
-            imageSet1[i] = img;
+    private void applyLanguage() {
+        if (currentLanguage.equals("fa")) {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        } else {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-        shuffleArray(imageSet1);
-
-        // ساخت مجموعه دوم
-        usedImages.clear();
-        usedImages.add(commonImageIndex);
-        imageSet2[0] = commonImageIndex;
-        for (int i = 1; i < 9; i++) {
-            int img;
-            do {
-                img = rand.nextInt(imageIcons.length);
-            } while (usedImages.contains(img));
-            usedImages.add(img);
-            imageSet2[i] = img;
-        }
-        shuffleArray(imageSet2);
-
-        combinedBitmap = createCombinedBitmap();
-        ivQuestion.setImageBitmap(combinedBitmap);
     }
 
-    private Bitmap createCombinedBitmap() {
-        Bitmap topBitmap = createSingleImageSet(imageSet1);
-        Bitmap bottomBitmap = createSingleImageSet(imageSet2);
-
-        int combinedWidth = Math.max(topBitmap.getWidth(), bottomBitmap.getWidth());
-        int combinedHeight = topBitmap.getHeight() + bottomBitmap.getHeight() + 40;
-
-        Bitmap combined = Bitmap.createBitmap(combinedWidth, combinedHeight, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(combined);
-        canvas.drawColor(Color.WHITE);
-
-        Paint textPaint = new Paint();
-        textPaint.setColor(Color.BLACK);
-        textPaint.setTextSize(20);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-
-        canvas.drawText("مجموعه ۱", combinedWidth / 2, 30, textPaint);
-        canvas.drawBitmap(topBitmap, (combinedWidth - topBitmap.getWidth()) / 2, 40, null);
-
-        Paint linePaint = new Paint();
-        linePaint.setColor(Color.BLACK);
-        linePaint.setStrokeWidth(2);
-        canvas.drawLine(0, topBitmap.getHeight() + 50, combinedWidth, topBitmap.getHeight() + 50, linePaint);
-
-        canvas.drawText("مجموعه ۲", combinedWidth / 2, topBitmap.getHeight() + 70, textPaint);
-        canvas.drawBitmap(bottomBitmap, (combinedWidth - bottomBitmap.getWidth()) / 2, topBitmap.getHeight() + 80, null);
-
-        return combined;
+    private String getInstructionText() {
+        if (currentLanguage.equals("en")) {
+            return "Find the common image between the two sets, then press Finish";
+        } else {
+            return "عکس مشترک بین دو مجموعه را پیدا کن، سپس دکمه پایان را بزن";
+        }
     }
 
-    private Bitmap createSingleImageSet(int[] imageSet) {
-        int cellSize = 80;
-        int padding = 10;
-        int cols = 3;
-        int rows = 3;
-        int width = cols * cellSize + padding * 2;
-        int height = rows * cellSize + padding * 2;
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.WHITE);
-
-        Paint bgPaint = new Paint();
-        bgPaint.setColor(Color.LTGRAY);
-
-        for (int i = 0; i < 9; i++) {
-            int row = i / cols;
-            int col = i % cols;
-            int x = padding + col * cellSize;
-            int y = padding + row * cellSize;
-
-            canvas.drawRect(x, y, x + cellSize, y + cellSize, bgPaint);
-
-            Bitmap iconBitmap = BitmapFactory.decodeResource(getResources(), imageIcons[imageSet[i]]);
-            if (iconBitmap != null) {
-                Bitmap scaledIcon = Bitmap.createScaledBitmap(iconBitmap, cellSize - 10, cellSize - 10, true);
-                canvas.drawBitmap(scaledIcon, x + 5, y + 5, null);
-            }
-        }
-
-        return bitmap;
+    private String getStartText() {
+        return currentLanguage.equals("en") ? "Start" : "شروع";
     }
 
-    private void shuffleArray(int[] array) {
-        Random rand = new Random();
-        for (int i = array.length - 1; i > 0; i--) {
-            int j = rand.nextInt(i + 1);
-            int temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
+    private String getFinishText() {
+        return currentLanguage.equals("en") ? "Finish" : "پایان";
+    }
+
+    private String getRetryText() {
+        return currentLanguage.equals("en") ? "Retry" : "تست مجدد";
+    }
+
+    private String getResultText(double time) {
+        if (currentLanguage.equals("en")) {
+            return "✅ Time: " + String.format("%.2f", time) + " seconds";
+        } else {
+            return "✅ زمان: " + String.format("%.2f", time) + " ثانیه";
         }
+    }
+
+    private String getNoDataText() {
+        if (currentLanguage.equals("en")) {
+            return "No data for this difficulty";
+        } else {
+            return "داده‌ای برای این سطح سختی وجود ندارد";
+        }
+    }
+
+    private String getNoHistoryText() {
+        if (currentLanguage.equals("en")) {
+            return "No history for this difficulty";
+        } else {
+            return "تاریخچه‌ای برای این سطح سختی وجود ندارد";
+        }
+    }
+
+    private void loadDefaultImage() {
+        if (defaultBitmap == null || defaultBitmap.isRecycled()) {
+            defaultBitmap = CommonImageGenerator.generateDefaultImage();
+        }
+        ivImage.setImageBitmap(defaultBitmap);
     }
 
     private void startGame() {
+        if (isRunning) return;
+
         isRunning = true;
         isFinished = false;
         startTime = System.currentTimeMillis();
+
+        CommonImageGenerator.CommonImageResult result =
+                CommonImageGenerator.generateCommonImageResult(difficultyLevel);
+        currentQuestionBitmap = result.questionImage;
+        currentAnswerBitmap = result.answerImage;
+
+        ivImage.setImageBitmap(currentQuestionBitmap);
+
         btnStart.setVisibility(View.GONE);
         btnFinish.setVisibility(View.VISIBLE);
-        layoutAnswer.setVisibility(View.GONE);
+        btnFinish.setText(getFinishText());
+        btnRetry.setVisibility(View.GONE);
         layoutResult.setVisibility(View.GONE);
         tvResult.setText("");
         tvResultDetail.setText("");
+        tvInstruction.setText(getInstructionText());
+
+        layoutChart.setVisibility(View.VISIBLE);
+
         updateTimer();
     }
 
     private void finishGame() {
         if (!isRunning) return;
+
         isRunning = false;
         isFinished = true;
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;
 
-        btnFinish.setVisibility(View.GONE);
-        btnNextLevel.setVisibility(View.VISIBLE);
-        btnReset.setVisibility(View.VISIBLE);
-
-        // جواب
-        layoutAnswer.setVisibility(View.VISIBLE);
-        tvAnswerText.setVisibility(View.VISIBLE);
-        tvAnswerText.setText("✅ عکس مشترک پیدا شد!");
-
-        // نمایش عکس مشترک
-        Bitmap answerBitmap = BitmapFactory.decodeResource(getResources(), imageIcons[commonImageIndex]);
-        if (answerBitmap != null) {
-            Bitmap scaledAnswer = Bitmap.createScaledBitmap(answerBitmap, 150, 150, true);
-            ivAnswer.setImageBitmap(scaledAnswer);
+        if (currentAnswerBitmap != null && !currentAnswerBitmap.isRecycled()) {
+            ivImage.setImageBitmap(currentAnswerBitmap);
         }
 
-        // ذخیره نتیجه
-        GameModel result = new GameModel("common_image", "عکس مشترک", currentLevel, elapsedTime);
+        btnFinish.setVisibility(View.GONE);
+        btnRetry.setVisibility(View.VISIBLE);
+        btnRetry.setText(getRetryText());
+
+        GameModel result = new GameModel("common_image", gameTitle, difficultyLevel, elapsedTime);
         GamePreferencesHelper.addGameResult(this, result);
 
-        // نمایش نتیجه
         layoutResult.setVisibility(View.VISIBLE);
-        tvResultDetail.setText("✅ زمان: " + String.format("%.2f", elapsedTime) + " ثانیه");
+        tvResultDetail.setText(getResultText(elapsedTime));
+        tvResult.setText("");
 
+        showChartAndHistory();
         stopTimer();
     }
 
-    private void nextLevel() {
-        if (currentLevel < maxLevel) {
-            currentLevel++;
-            resetGame();
-            generateImages();
-            setupUI();
-            startGame();
-        } else {
-            tvResult.setText("🎉 تبریک! همه سطوح را کامل کردی!");
-            btnNextLevel.setVisibility(View.GONE);
-        }
-    }
-
-    private void resetGame() {
-        isRunning = false;
+    private void retryGame() {
         isFinished = false;
-        ivQuestion.setImageBitmap(null);
-        ivAnswer.setImageBitmap(null);
+        isRunning = false;
+        elapsedTime = 0;
+
+        btnRetry.setVisibility(View.GONE);
+        layoutResult.setVisibility(View.GONE);
         tvResult.setText("");
         tvResultDetail.setText("");
-        tvTimer.setText("⏱ 00:00");
+
+        loadDefaultImage();
+
         btnStart.setVisibility(View.VISIBLE);
-        btnFinish.setVisibility(View.GONE);
-        btnNextLevel.setVisibility(View.GONE);
-        btnReset.setVisibility(View.GONE);
-        layoutAnswer.setVisibility(View.GONE);
-        layoutResult.setVisibility(View.GONE);
-        tvAnswerText.setVisibility(View.GONE);
-        stopTimer();
+        btnStart.setText(getStartText());
+        tvInstruction.setText(getInstructionText());
+        tvTimer.setText("⏱ 00:00");
+
+        layoutChart.setVisibility(View.VISIBLE);
+        showChartAndHistory();
     }
 
     private void updateTimer() {
@@ -322,9 +293,159 @@ public class CommonImageGameActivity extends AppCompatActivity {
         timerHandler.removeCallbacksAndMessages(null);
     }
 
+    private void recycleBitmaps() {
+        if (currentQuestionBitmap != null && !currentQuestionBitmap.isRecycled()) {
+            currentQuestionBitmap.recycle();
+            currentQuestionBitmap = null;
+        }
+        if (currentAnswerBitmap != null && !currentAnswerBitmap.isRecycled()) {
+            currentAnswerBitmap.recycle();
+            currentAnswerBitmap = null;
+        }
+        if (defaultBitmap != null && !defaultBitmap.isRecycled()) {
+            defaultBitmap.recycle();
+            defaultBitmap = null;
+        }
+    }
+
+    private void showChartAndHistory() {
+        layoutChart.setVisibility(View.VISIBLE);
+        setupChartAndHistory();
+    }
+
+    private void setupChartAndHistory() {
+        List<GameModel> history = GamePreferencesHelper.loadGameHistory(this, "common_image");
+
+        List<GameModel> filteredHistory = new ArrayList<>();
+        for (GameModel game : history) {
+            if (game.getLevel() == difficultyLevel) {
+                filteredHistory.add(game);
+            }
+        }
+
+        int startIndex = Math.max(0, filteredHistory.size() - MAX_HISTORY_TABLE_ITEMS);
+        List<GameModel> displayHistory = filteredHistory.subList(startIndex, filteredHistory.size());
+
+        if (displayHistory.isEmpty()) {
+            chartProgress.setVisibility(View.GONE);
+            tvNoData.setVisibility(View.VISIBLE);
+            rvHistory.setVisibility(View.GONE);
+            tvNoHistory.setVisibility(View.VISIBLE);
+
+            tvNoData.setText(getNoDataText());
+            tvNoHistory.setText(getNoHistoryText());
+
+            updateChartAndHistoryTitles();
+            return;
+        }
+
+        chartProgress.setVisibility(View.VISIBLE);
+        tvNoData.setVisibility(View.GONE);
+        rvHistory.setVisibility(View.VISIBLE);
+        tvNoHistory.setVisibility(View.GONE);
+
+        setupLineChart(displayHistory);
+        historyAdapter.updateData(displayHistory);
+        updateChartAndHistoryTitles();
+    }
+
+    private void setupLineChart(List<GameModel> history) {
+        List<Entry> entries = new ArrayList<>();
+        double maxTime = 0;
+
+        for (int i = 0; i < history.size(); i++) {
+            GameModel game = history.get(i);
+            entries.add(new Entry(i, (float) game.getTime()));
+            if (game.getTime() > maxTime) maxTime = game.getTime();
+        }
+
+        if (entries.isEmpty()) {
+            chartProgress.setVisibility(View.GONE);
+            tvNoData.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        String label = currentLanguage.equals("en") ? "Time (s)" : "زمان (ثانیه)";
+        LineDataSet dataSet = new LineDataSet(entries, label);
+        dataSet.setColor(getResources().getColor(R.color.primary_blue));
+        dataSet.setCircleColor(getResources().getColor(R.color.primary_blue));
+        dataSet.setCircleRadius(4f);
+        dataSet.setLineWidth(2.5f);
+        dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(getResources().getColor(R.color.text_secondary));
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(getResources().getColor(R.color.primary_blue));
+        dataSet.setFillAlpha(50);
+        dataSet.setDrawValues(true);
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+
+        List<ILineDataSet> dataSets = new ArrayList<>();
+        dataSets.add(dataSet);
+
+        LineData lineData = new LineData(dataSets);
+        chartProgress.setData(lineData);
+
+        XAxis xAxis = chartProgress.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(getResources().getColor(R.color.text_secondary));
+        xAxis.setTextSize(10f);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+        xAxis.setAxisMinimum(0);
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return "#" + (int) (value + 1);
+            }
+        });
+
+        YAxis yAxisLeft = chartProgress.getAxisLeft();
+        yAxisLeft.setTextColor(getResources().getColor(R.color.text_secondary));
+        yAxisLeft.setTextSize(10f);
+        yAxisLeft.setDrawGridLines(true);
+        yAxisLeft.setGridColor(getResources().getColor(R.color.border_light));
+        yAxisLeft.setAxisMinimum(0);
+        yAxisLeft.setAxisMaximum((float) (maxTime + 5));
+
+        YAxis yAxisRight = chartProgress.getAxisRight();
+        yAxisRight.setEnabled(false);
+
+        chartProgress.getDescription().setEnabled(false);
+        chartProgress.setTouchEnabled(true);
+        chartProgress.setDragEnabled(true);
+        chartProgress.setScaleEnabled(true);
+        chartProgress.setPinchZoom(true);
+        chartProgress.setBackgroundColor(getResources().getColor(R.color.white));
+        chartProgress.setExtraOffsets(10, 10, 10, 10);
+        chartProgress.invalidate();
+    }
+
+    private void updateChartAndHistoryTitles() {
+        String levelText = currentLanguage.equals("en") ? "Level" : "سطح";
+        String chartTitle, historyTitle;
+
+        if (currentLanguage.equals("en")) {
+            chartTitle = "Common Image Game Time - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+            historyTitle = "Common Image History - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+        } else {
+            chartTitle = "زمان بازی عکس مشترک - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+            historyTitle = "تاریخچه عکس مشترک - " + difficultyName + " (" + levelText + " " + difficultyLevel + ")";
+        }
+
+        tvChartTitle.setText(chartTitle);
+        tvHistoryTitle.setText(historyTitle);
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopTimer();
+        recycleBitmaps();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        showChartAndHistory();
     }
 }
